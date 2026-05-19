@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+        <div>
+          <div class="text-uppercase text-primary fw-semibold small mb-1">Cadastro</div>
+          <h1 class="h2 mb-1">{{ title }}</h1>
+          <p class="text-secondary mb-0">Preencha os dados para manter seus custos atualizados.</p>
+        </div>
+        <a class="btn btn-outline-secondary btn-icon" href="{{ url_for('subscriptions.index') }}">
+          <i class="bi bi-arrow-left" aria-hidden="true"></i>
+          Voltar
+        </a>
+      </div>
+
+      <form class="app-panel p-4" method="post" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3">
+          <div class="col-12 col-md-8">
+            <label class="form-label" for="nome">Nome</label>
+            <input class="form-control {% if errors.nome %}is-invalid{% endif %}" id="nome" name="nome" required maxlength="120" value="{{ form_data.get('nome', '') }}">
+            {% if errors.nome %}<div class="invalid-feedback">{{ errors.nome }}</div>{% endif %}
+          </div>
+
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="valor">Valor</label>
+            <input class="form-control {% if errors.valor %}is-invalid{% endif %}" id="valor" name="valor" type="number" min="0" step="0.01" required value="{{ form_data.get('valor', '') }}">
+            {% if errors.valor %}<div class="invalid-feedback">{{ errors.valor }}</div>{% endif %}
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="frequencia">Frequencia</label>
+            <select class="form-select {% if errors.frequencia %}is-invalid{% endif %}" id="frequencia" name="frequencia" required>
+              {% for frequencia in frequencias %}
+                <option value="{{ frequencia }}" {% if form_data.get('frequencia', 'mensal') == frequencia %}selected{% endif %}>{{ frequencia|capitalize }}</option>
+              {% endfor %}
+            </select>
+            {% if errors.frequencia %}<div class="invalid-feedback">{{ errors.frequencia }}</div>{% endif %}
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="categoria">Categoria</label>
+            <select class="form-select {% if errors.categoria %}is-invalid{% endif %}" id="categoria" name="categoria" required>
+              {% for categoria in categorias %}
+                <option value="{{ categoria }}" {% if form_data.get('categoria', 'outros') == categoria %}selected{% endif %}>{{ categoria|capitalize }}</option>
+              {% endfor %}
+            </select>
+            {% if errors.categoria %}<div class="invalid-feedback">{{ errors.categoria }}</div>{% endif %}
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="vencimento">Dia de vencimento</label>
+            <input class="form-control {% if errors.vencimento %}is-invalid{% endif %}" id="vencimento" name="vencimento" type="number" min="1" max="31" required value="{{ form_data.get('vencimento', '') }}">
+            {% if errors.vencimento %}<div class="invalid-feedback">{{ errors.vencimento }}</div>{% endif %}
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="divisao">Pessoas na divisao</label>
+            <input class="form-control {% if errors.divisao %}is-invalid{% endif %}" id="divisao" name="divisao" type="number" min="1" required value="{{ form_data.get('divisao', 1) }}">
+            {% if errors.divisao %}<div class="invalid-feedback">{{ errors.divisao }}</div>{% endif %}
+          </div>
+
+          <div class="col-12">
+            <div class="form-check form-switch">
+              {% set ativo_value = form_data.get('ativo', true) %}
+              <input class="form-check-input" id="ativo" name="ativo" type="checkbox" {% if ativo_value in [true, 'True', 'true', 'on', '1'] %}checked{% endif %}>
+              <label class="form-check-label" for="ativo">Assinatura ativa</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <a class="btn btn-outline-secondary btn-icon" href="{{ url_for('subscriptions.index') }}">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+            Cancelar
+          </a>
+          <button class="btn btn-primary btn-icon" type="submit">
+            <i class="bi bi-check2" aria-hidden="true"></i>
+            Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}
