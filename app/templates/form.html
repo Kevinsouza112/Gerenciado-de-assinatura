@@ -3,20 +3,30 @@
 {% block content %}
   <div class="row justify-content-center">
     <div class="col-12 col-lg-8">
-      <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
-        <div>
-          <div class="text-uppercase text-primary fw-semibold small mb-1">Cadastro</div>
-          <h1 class="h2 mb-1">{{ title }}</h1>
-          <p class="text-secondary mb-0">Preencha os dados para manter seus custos atualizados.</p>
+      <div class="app-panel p-4 mb-4">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+          <div>
+            <div class="page-kicker mb-2">Cadastro</div>
+            <h1 class="h2 fw-bold mb-1">{{ title }}</h1>
+            <p class="text-secondary mb-0">Preencha os dados para manter seus custos atualizados.</p>
+          </div>
+          <a class="btn btn-outline-secondary btn-icon" href="{{ url_for('subscriptions.index') }}">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            Voltar
+          </a>
         </div>
-        <a class="btn btn-outline-secondary btn-icon" href="{{ url_for('subscriptions.index') }}">
-          <i class="bi bi-arrow-left" aria-hidden="true"></i>
-          Voltar
-        </a>
       </div>
 
-      <form class="app-panel p-4" method="post" novalidate>
+      <form class="app-panel p-4 p-lg-5" method="post" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="d-flex align-items-center gap-2 mb-4">
+          <span class="summary-icon summary-icon-primary"><i class="bi bi-credit-card-2-front" aria-hidden="true"></i></span>
+        <div>
+            <div class="fw-bold">Dados da assinatura</div>
+            <div class="text-secondary small">Valores, frequência, vencimento e divisão.</div>
+          </div>
+        </div>
 
         <div class="row g-3">
           <div class="col-12 col-md-8">
@@ -32,7 +42,7 @@
           </div>
 
           <div class="col-12 col-md-6">
-            <label class="form-label" for="frequencia">Frequencia</label>
+            <label class="form-label" for="frequencia">Frequência</label>
             <select class="form-select {% if errors.frequencia %}is-invalid{% endif %}" id="frequencia" name="frequencia" required>
               {% for frequencia in frequencias %}
                 <option value="{{ frequencia }}" {% if form_data.get('frequencia', 'mensal') == frequencia %}selected{% endif %}>{{ frequencia|capitalize }}</option>
@@ -58,7 +68,7 @@
           </div>
 
           <div class="col-12 col-md-6">
-            <label class="form-label" for="divisao">Pessoas na divisao</label>
+            <label class="form-label" for="divisao">Pessoas na divisão</label>
             <input class="form-control {% if errors.divisao %}is-invalid{% endif %}" id="divisao" name="divisao" type="number" min="1" required value="{{ form_data.get('divisao', 1) }}">
             {% if errors.divisao %}<div class="invalid-feedback">{{ errors.divisao }}</div>{% endif %}
           </div>

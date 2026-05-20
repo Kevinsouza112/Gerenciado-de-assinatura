@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="reports-page">
+  <div class="app-panel p-4 p-lg-5 mb-4">
+    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-4">
+      <div>
+        <div class="page-kicker mb-2">Relatórios</div>
+        <h1 class="display-6 fw-bold mb-2">Análise das suas assinaturas</h1>
+        <p class="text-secondary mb-0">Veja distribuição de custos, recorrências e vencimentos próximos.</p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <span class="topbar-pill">
+          <i class="bi bi-check-circle" aria-hidden="true"></i>
+          {{ report.active_count }} ativas
+        </span>
+        <span class="topbar-pill">
+          <i class="bi bi-archive" aria-hidden="true"></i>
+          {{ report.inactive_count }} inativa{% if report.inactive_count != 1 %}s{% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <section class="row g-3 mb-4" aria-label="Resumo financeiro">
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="summary-card p-4 h-100">
+        <div class="d-flex align-items-start justify-content-between gap-3">
+          <div>
+            <div class="summary-label">Total bruto mensal</div>
+            <div class="summary-value">{{ summary.total_bruto_mensal|money }}</div>
+          </div>
+          <span class="summary-icon summary-icon-primary"><i class="bi bi-calendar-month" aria-hidden="true"></i></span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="summary-card p-4 h-100">
+        <div class="d-flex align-items-start justify-content-between gap-3">
+          <div>
+            <div class="summary-label">Total real mensal</div>
+            <div class="summary-value">{{ summary.total_real_mensal|money }}</div>
+          </div>
+          <span class="summary-icon summary-icon-success"><i class="bi bi-people" aria-hidden="true"></i></span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="summary-card p-4 h-100">
+        <div class="d-flex align-items-start justify-content-between gap-3">
+          <div>
+            <div class="summary-label">Total bruto anual</div>
+            <div class="summary-value">{{ summary.total_bruto_anual|money }}</div>
+          </div>
+          <span class="summary-icon summary-icon-warning"><i class="bi bi-bar-chart" aria-hidden="true"></i></span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="summary-card p-4 h-100">
+        <div class="d-flex align-items-start justify-content-between gap-3">
+          <div>
+            <div class="summary-label">Total real anual</div>
+            <div class="summary-value">{{ summary.total_real_anual|money }}</div>
+          </div>
+          <span class="summary-icon summary-icon-info"><i class="bi bi-piggy-bank" aria-hidden="true"></i></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
+    <div class="report-tabs" aria-label="Abas do relatório">
+      <span class="report-tab active"><i class="bi bi-cash-coin" aria-hidden="true"></i> Custos</span>
+      <span class="report-tab"><i class="bi bi-bullseye" aria-hidden="true"></i> Categorias</span>
+    </div>
+    <span class="topbar-pill">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+      Atualizado em {{ report.updated_at }}
+    </span>
+  </div>
+
+  <div class="details-strip mb-5">
+    <span>Detalhes</span>
+    <span class="text-end">custos normalizados por mês</span>
+  </div>
+
+  <section class="row g-3 mb-4">
+    <div class="col-12 col-xl-8">
+      <div class="app-panel p-4 h-100">
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+          <div>
+            <h2 class="h5 fw-bold mb-1">Vencimentos nos próximos 7 dias</h2>
+            <p class="text-secondary mb-0">Quantidade de assinaturas ativas por dia.</p>
+          </div>
+          <span class="summary-icon summary-icon-primary"><i class="bi bi-activity" aria-hidden="true"></i></span>
+        </div>
+        <svg class="line-chart" viewBox="0 0 820 280" role="img" aria-label="Gráfico de vencimentos">
+          {% for y in [60, 100, 140, 180, 220] %}
+            <line x1="48" y1="{{ y }}" x2="790" y2="{{ y }}" stroke="var(--app-border)" />
+          {% endfor %}
+          <line x1="48" y1="230" x2="790" y2="230" stroke="var(--app-border)" />
+          <polyline points="{{ report.due_polyline }}" fill="none" stroke="var(--app-primary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+          {% for point in report.due_points %}
+            <circle cx="{{ point.x }}" cy="{{ point.y }}" r="6" fill="var(--app-primary)" />
+            <text x="{{ point.x }}" y="258" text-anchor="middle" fill="var(--report-muted)" font-size="14">{{ point.label }}</text>
+            <text x="{{ point.x }}" y="{{ point.y - 14 }}" text-anchor="middle" fill="var(--report-value)" font-size="14" font-weight="700">{{ point.count }}</text>
+          {% endfor %}
+        </svg>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+      <div class="app-panel p-4 h-100">
+        <h2 class="h5 fw-bold mb-4">Distribuição por categoria</h2>
+        <div class="donut-chart mb-4" style="background: conic-gradient({{ report.category_conic }});" aria-hidden="true"></div>
+        <div class="d-grid gap-3">
+          {% for row in report.category_rows %}
+            <div class="d-flex align-items-center justify-content-between gap-3">
+              <div class="d-flex align-items-center gap-2">
+                <span class="legend-dot" style="background: {{ row.color }}"></span>
+                <span class="fw-bold text-capitalize">{{ row.name }}</span>
+              </div>
+              <div class="text-end">
+                <span class="text-secondary">{{ row.percent }}%</span>
+                <span class="fw-bold ms-3">{{ row.count }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="row g-3">
+    <div class="col-12 col-lg-4">
+      <div class="app-panel p-4 h-100">
+        <h2 class="h5 fw-bold mb-4">Frequência</h2>
+        <div class="d-grid gap-3">
+          {% for row in report.frequency_rows %}
+            <div>
+              <div class="d-flex justify-content-between mb-2">
+                <span class="fw-bold text-capitalize">{{ row.name }}</span>
+                <span class="text-secondary">{{ row.count }} assinatura{% if row.count != 1 %}s{% endif %}</span>
+              </div>
+              <div class="progress" style="height: 10px;">
+                <div class="progress-bar" style="width: {{ row.percent }}%; background: {{ row.color }}"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+      <div class="app-panel p-4 h-100">
+        <h2 class="h5 fw-bold mb-4">Status da carteira</h2>
+        <div class="d-grid gap-3">
+          {% for row in report.status_rows %}
+            <div class="d-flex align-items-center justify-content-between gap-3">
+              <div class="d-flex align-items-center gap-2">
+                <span class="legend-dot" style="background: {{ row.color }}"></span>
+                <span class="fw-bold">{{ row.name }}</span>
+              </div>
+              <div class="text-end">
+                <span class="text-secondary">{{ row.percent }}%</span>
+                <span class="fw-bold ms-3">{{ row.count }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+      <div class="app-panel p-4 h-100">
+        <h2 class="h5 fw-bold mb-4">Maiores custos reais</h2>
+        <div class="d-grid gap-3">
+          {% for item in report.top_costs %}
+            <div class="d-flex align-items-center justify-content-between gap-3">
+              <div>
+                <div class="fw-bold">{{ item.nome }}</div>
+                <div class="text-secondary small text-capitalize">{{ item.categoria }} / {{ item.frequencia }}</div>
+              </div>
+              <span class="fw-bold">{{ item.custo_real_mensal|money }}</span>
+            </div>
+          {% else %}
+            <div class="text-secondary">Nenhuma assinatura ativa para analisar.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

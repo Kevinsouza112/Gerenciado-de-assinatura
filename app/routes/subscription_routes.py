@@ -2,7 +2,7 @@ from secrets import compare_digest, token_urlsafe
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
-from app.models.subscription import CATEGORIAS, FREQUENCIAS
+from app.models.subscription import CATEGORIAS, FREQUENCIAS, Subscription
 from app.repositories.subscription_repository import SubscriptionRepository
 from app.services.subscription_service import SubscriptionService, ValidationError, parse_subscription_form
 
@@ -62,6 +62,12 @@ def index():
     return render_template("index.html", **data)
 
 
+@subscription_bp.route("/relatorios")
+def reports():
+    data = _service().reports()
+    return render_template("reports.html", **data, title="Relatórios")
+
+
 @subscription_bp.route("/favicon.ico")
 def favicon():
     return "", 204
@@ -113,6 +119,38 @@ def edit_subscription(subscription_id: int):
 @subscription_bp.route("/excluir/<int:subscription_id>", methods=["POST"])
 def delete_subscription(subscription_id: int):
     _validate_csrf()
-    _repository().delete(subscription_id)
-    flash("Assinatura excluida com sucesso.", "success")
+    _repository().deactivate(subscription_id)
+    flash("Assinatura marcada como inativa.", "success")
+    return redirect(url_for("subscriptions.index"))
+
+
+@subscription_bp.route("/duplicar/<int:subscription_id>", methods=["POST"])
+def duplicate_subscription(subscription_id: int):
+    _validate_csrf()
+    repository = _repository()
+    existing = repository.get_by_id(subscription_id)
+    if existing is None:
+        abort(404)
+
+    repository.create(
+        Subscription(
+            id=None,
+            nome=f"{existing.nome} (copia)",
+            valor=existing.valor,
+            frequencia=existing.frequencia,
+            vencimento=existing.vencimento,
+            categoria=existing.categoria,
+            divisao=existing.divisao,
+            ativo=existing.ativo,
+        )
+    )
+    flash("Assinatura duplicada com sucesso.", "success")
+    return redirect(url_for("subscriptions.index"))
+
+
+@subscription_bp.route("/reativar/<int:subscription_id>", methods=["POST"])
+def reactivate_subscription(subscription_id: int):
+    _validate_csrf()
+    _repository().activate(subscription_id)
+    flash("Assinatura reativada com sucesso.", "success")
     return redirect(url_for("subscriptions.index"))

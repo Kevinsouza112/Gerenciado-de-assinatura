@@ -27,6 +27,17 @@ class SubscriptionRepository:
         ).fetchall()
         return [_row_to_subscription(row) for row in rows]
 
+    def list_inactive(self) -> list[Subscription]:
+        rows = get_db().execute(
+            """
+            SELECT id, nome, valor, frequencia, vencimento, categoria, divisao, ativo
+            FROM assinatura
+            WHERE ativo = 0
+            ORDER BY nome ASC
+            """
+        ).fetchall()
+        return [_row_to_subscription(row) for row in rows]
+
     def get_by_id(self, subscription_id: int) -> Subscription | None:
         row = get_db().execute(
             """
@@ -76,6 +87,10 @@ class SubscriptionRepository:
         )
         get_db().commit()
 
-    def delete(self, subscription_id: int) -> None:
-        get_db().execute("DELETE FROM assinatura WHERE id = ?", (subscription_id,))
+    def deactivate(self, subscription_id: int) -> None:
+        get_db().execute("UPDATE assinatura SET ativo = 0 WHERE id = ?", (subscription_id,))
+        get_db().commit()
+
+    def activate(self, subscription_id: int) -> None:
+        get_db().execute("UPDATE assinatura SET ativo = 1 WHERE id = ?", (subscription_id,))
         get_db().commit()
