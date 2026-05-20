@@ -88,3 +88,5 @@ Também foram validados:
 - Se a virtualenv não existir, recrie com os comandos do README.
 - O banco local fica em `instance/assinaturas.sqlite3`; ele pode não estar versionado.
 - O fallback `SECRET_KEY="dev-change-me"` é aceitável em local, mas deve ser substituído por variável de ambiente se for publicar.
+- As skills customizadas foram copiadas para `.codex/skills/`.
+- Para instalar as skills como globais no outro notebook, rode `.\scripts\install-codex-skills.ps1` ou `.\scripts\install-codex-skills.ps1 -Force`.

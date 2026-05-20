@@ -1,0 +1,4 @@
+interface:
+  display_name: "PHP SaaS Restaurant MVP"
+  short_description: "Build secure PHP/MySQL restaurant SaaS MVPs"
+  default_prompt: "Use $php-saas-restaurant-mvp to plan and implement a secure MVP feature for a PHP/MySQL restaurant ordering SaaS."

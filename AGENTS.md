@@ -56,6 +56,8 @@ python run.py
 - `app/templates/reports.html`: tela de relatórios.
 - `app/templates/form.html`: formulário de cadastro/edição.
 - `tests/test_app.py`: testes de fluxo principal.
+- `.codex/skills/`: cópia versionada das skills customizadas usadas neste projeto.
+- `scripts/install-codex-skills.ps1`: instala as skills do projeto no Codex global do notebook atual.
 
 ## Checklist Antes de Finalizar
 

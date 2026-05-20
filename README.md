@@ -94,3 +94,25 @@ Tabela `assinatura`:
 - [Roadmap](roadmap.md)
 - [Arquitetura](docs/architecture.md)
 - [Instruções para agentes](AGENTS.md)
+
+## Skills do Codex
+
+As skills customizadas usadas no projeto ficam versionadas em:
+
+```text
+.codex/skills/
+```
+
+Para instalar essas skills como globais em outro notebook, depois do `git pull`, rode:
+
+```powershell
+.\scripts\install-codex-skills.ps1
+```
+
+Para sobrescrever skills globais que já existam:
+
+```powershell
+.\scripts\install-codex-skills.ps1 -Force
+```
+
+Depois reinicie o Codex/VS Code para a lista de skills ser recarregada.
