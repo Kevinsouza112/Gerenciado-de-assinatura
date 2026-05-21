@@ -14,6 +14,9 @@ REPORT_COLORS = {
     "ativas": "#14b87a",
     "inativas": "#ef4444",
 }
+MAX_SUBSCRIPTION_NAME_LENGTH = 120
+MAX_SUBSCRIPTION_VALUE = Decimal("1000000")
+MAX_DIVISION = 1000
 
 
 class ValidationError(Exception):
@@ -28,12 +31,19 @@ def parse_subscription_form(form) -> Subscription:
     nome = form.get("nome", "").strip()
     if not nome:
         errors["nome"] = "Informe o nome da assinatura."
+    elif len(nome) > MAX_SUBSCRIPTION_NAME_LENGTH:
+        errors["nome"] = "O nome deve ter no máximo 120 caracteres."
 
     try:
-        valor = float(Decimal(form.get("valor", "").replace(",", ".")))
-        if valor < 0:
+        valor_decimal = Decimal(form.get("valor", "").replace(",", "."))
+        if not valor_decimal.is_finite():
+            errors["valor"] = "Informe um valor numérico válido."
+        elif valor_decimal < 0:
             errors["valor"] = "Informe um valor igual ou maior que zero."
-    except (InvalidOperation, ValueError):
+        elif valor_decimal > MAX_SUBSCRIPTION_VALUE:
+            errors["valor"] = "Informe um valor de até R$ 1.000.000,00."
+        valor = float(valor_decimal) if "valor" not in errors else 0.0
+    except (InvalidOperation, OverflowError, ValueError):
         valor = 0.0
         errors["valor"] = "Informe um valor numérico válido."
 
@@ -57,6 +67,8 @@ def parse_subscription_form(form) -> Subscription:
         divisao = int(form.get("divisao", "1"))
         if divisao < 1:
             errors["divisao"] = "A divisão deve ser no mínimo 1."
+        elif divisao > MAX_DIVISION:
+            errors["divisao"] = "A divisão deve ser no máximo 1000."
     except ValueError:
         divisao = 1
         errors["divisao"] = "Informe um número válido."
@@ -96,9 +108,9 @@ class SubscriptionService:
     def __init__(self, repository: SubscriptionRepository):
         self.repository = repository
 
-    def dashboard(self) -> dict:
-        subscriptions = self.repository.list_active()
-        inactive_subscriptions = self.repository.list_inactive()
+    def dashboard(self, user_id: int) -> dict:
+        subscriptions = self.repository.list_active(user_id)
+        inactive_subscriptions = self.repository.list_inactive(user_id)
         total_bruto_mensal = sum(item.valor_mensal for item in subscriptions)
         total_real_mensal = sum(item.custo_real_mensal for item in subscriptions)
 
@@ -114,9 +126,9 @@ class SubscriptionService:
             },
         }
 
-    def reports(self) -> dict:
-        subscriptions = self.repository.list_active()
-        inactive_subscriptions = self.repository.list_inactive()
+    def reports(self, user_id: int) -> dict:
+        subscriptions = self.repository.list_active(user_id)
+        inactive_subscriptions = self.repository.list_inactive(user_id)
         total_bruto_mensal = sum(item.valor_mensal for item in subscriptions)
         total_real_mensal = sum(item.custo_real_mensal for item in subscriptions)
         total_count = len(subscriptions) + len(inactive_subscriptions)

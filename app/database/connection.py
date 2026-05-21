@@ -21,8 +21,24 @@ def close_db(error=None) -> None:
         connection.close()
 
 
+def _assinatura_column_exists(column: str) -> bool:
+    rows = get_db().execute("PRAGMA table_info(assinatura)").fetchall()
+    return any(row["name"] == column for row in rows)
+
+
 def init_db() -> None:
     db = get_db()
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS usuario (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS assinatura (
@@ -37,4 +53,9 @@ def init_db() -> None:
         )
         """
     )
+    if not _assinatura_column_exists("user_id"):
+        db.execute("ALTER TABLE assinatura ADD COLUMN user_id INTEGER")
+
+    db.execute("CREATE INDEX IF NOT EXISTS idx_assinatura_user_ativo ON assinatura (user_id, ativo)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario (email)")
     db.commit()

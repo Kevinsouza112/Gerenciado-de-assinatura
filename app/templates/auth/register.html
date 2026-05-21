@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-xl-5">
+      <div class="app-panel p-4 p-lg-5">
+        <div class="text-center mb-4">
+          <span class="summary-icon summary-icon-success mx-auto mb-3"><i class="bi bi-person-plus" aria-hidden="true"></i></span>
+          <div class="page-kicker mb-2">Cadastro</div>
+          <h1 class="h2 fw-bold mb-2">Criar conta</h1>
+          <p class="text-secondary mb-0">Cada conta acessa apenas as próprias assinaturas.</p>
+        </div>
+
+        <form method="post" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3">
+            <label class="form-label" for="nome">Nome</label>
+            <input class="form-control {% if errors.nome %}is-invalid{% endif %}" id="nome" name="nome" autocomplete="name" required value="{{ form_data.get('nome', '') }}">
+            {% if errors.nome %}<div class="invalid-feedback">{{ errors.nome }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="email">E-mail</label>
+            <input class="form-control {% if errors.email %}is-invalid{% endif %}" id="email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" required value="{{ form_data.get('email', '') }}" aria-describedby="email-domain-suggestion">
+            <div class="form-text text-secondary" id="email-domain-suggestion" aria-live="polite"></div>
+            {% if errors.email %}<div class="invalid-feedback">{{ errors.email }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="senha">Senha</label>
+            <input class="form-control {% if errors.senha %}is-invalid{% endif %}" id="senha" name="senha" type="password" autocomplete="new-password" required minlength="6" maxlength="128">
+            <div class="form-text text-secondary">Use maiúscula, minúscula e caractere especial.</div>
+            {% if errors.senha %}<div class="invalid-feedback">{{ errors.senha }}</div>{% endif %}
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label" for="confirmar_senha">Confirmar senha</label>
+            <input class="form-control {% if errors.confirmar_senha %}is-invalid{% endif %}" id="confirmar_senha" name="confirmar_senha" type="password" autocomplete="new-password" required minlength="6" maxlength="128" aria-describedby="password-match-feedback">
+            <div class="form-text text-secondary" id="password-match-feedback" aria-live="polite"></div>
+            {% if errors.confirmar_senha %}<div class="invalid-feedback">{{ errors.confirmar_senha }}</div>{% endif %}
+          </div>
+
+          <button class="btn btn-primary btn-icon w-100" type="submit">
+            <i class="bi bi-person-check" aria-hidden="true"></i>
+            Criar conta
+          </button>
+        </form>
+
+        <div class="text-center text-secondary mt-4">
+          Já tem conta?
+          <a class="fw-bold" href="{{ url_for('auth.login') }}">Entrar</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const emailInput = document.getElementById("email");
+      const emailSuggestion = document.getElementById("email-domain-suggestion");
+      const passwordInput = document.getElementById("senha");
+      const confirmInput = document.getElementById("confirmar_senha");
+      const passwordFeedback = document.getElementById("password-match-feedback");
+      const domains = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com"];
+
+      const renderEmailSuggestion = () => {
+        const value = emailInput.value.trim();
+        const atIndex = value.indexOf("@");
+
+        if (atIndex === -1 || value.indexOf(".", atIndex) !== -1) {
+          emailSuggestion.replaceChildren();
+          return;
+        }
+
+        const local = value.slice(0, atIndex);
+        const typedDomain = value.slice(atIndex + 1).toLowerCase();
+        if (!local || !typedDomain) {
+          emailSuggestion.replaceChildren();
+          return;
+        }
+
+        const match = domains.find((domain) => domain.startsWith(typedDomain));
+        if (!match || match === typedDomain) {
+          emailSuggestion.replaceChildren();
+          return;
+        }
+
+        const suggestion = `${local}@${match}`;
+        const button = document.createElement("button");
+        button.className = "btn btn-link btn-sm p-0 fw-bold";
+        button.type = "button";
+        button.textContent = `Usar ${suggestion}`;
+        button.addEventListener("click", () => {
+          emailInput.value = suggestion;
+          emailSuggestion.replaceChildren();
+          emailInput.focus();
+        });
+        emailSuggestion.replaceChildren(button);
+      };
+
+      const renderPasswordMatch = () => {
+        if (!confirmInput.value) {
+          passwordFeedback.textContent = "";
+          confirmInput.classList.remove("is-valid", "is-invalid");
+          return;
+        }
+
+        if (passwordInput.value === confirmInput.value) {
+          passwordFeedback.textContent = "As senhas conferem.";
+          confirmInput.classList.remove("is-invalid");
+          confirmInput.classList.add("is-valid");
+        } else {
+          passwordFeedback.textContent = "As senhas ainda não conferem.";
+          confirmInput.classList.remove("is-valid");
+          confirmInput.classList.add("is-invalid");
+        }
+      };
+
+      emailInput.addEventListener("input", renderEmailSuggestion);
+      passwordInput.addEventListener("input", renderPasswordMatch);
+      confirmInput.addEventListener("input", renderPasswordMatch);
+    })();
+  </script>
+{% endblock %}

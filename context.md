@@ -15,8 +15,18 @@ O projeto já possui:
 - Duplicação de assinaturas.
 - Tela principal com filtros por categoria e frequência.
 - Seção de assinaturas ativas e seção separada de inativas.
-- Página de relatórios financeiros.
+- Dashboard financeiro.
 - Dark mode com paleta preto/cinza.
+- Cadastro e login com sessão.
+- Isolamento de assinaturas por usuário.
+- Senhas exigem maiúscula, minúscula e caractere especial.
+- Cadastro e login validam formato de e-mail no backend.
+- Cadastro tem sugestão de domínio de e-mail e confirmação de senha.
+- Dashboard é a tela inicial após login.
+- `/relatorios` existe apenas como redirecionamento legado para `/dashboard`.
+- CSRF rejeita POST sem token enviado e sem token esperado na sessão.
+- Produção exige `FLASK_SECRET_KEY` quando `FLASK_APP_ENV=production`.
+- Respostas incluem cabeçalhos básicos de segurança.
 - Testes automatizados cobrindo fluxo principal e exemplos.
 
 ## Decisões Tomadas
@@ -25,6 +35,7 @@ O projeto já possui:
 - SQLite foi escolhido por ser leve e local.
 - Bootstrap 5 foi mantido para interface responsiva.
 - O banco usa uma única tabela `assinatura`.
+- O login usa a tabela `usuario` e `assinatura.user_id`.
 - A exclusão virou inativação lógica.
 - Regras financeiras ficam no modelo e no serviço, não nos templates.
 
@@ -38,6 +49,11 @@ O projeto já possui:
 - Custo real mensal é `valor_mensal / divisao`.
 - Totais do painel consideram apenas assinaturas ativas.
 - Inativas ficam visíveis, mas não entram nos totais.
+- Usuários só podem listar, editar, inativar, duplicar e reativar assinaturas próprias.
+- Senhas são salvas apenas como hash e devem ter pelo menos 6 caracteres, uma maiúscula, uma minúscula e um caractere especial.
+- Valores de assinatura precisam ser finitos, não negativos e até R$ 1.000.000,00.
+- O nome da assinatura tem limite backend de 120 caracteres.
+- A divisão tem limite backend de 1000 pessoas.
 
 ## Design Atual
 
@@ -52,7 +68,7 @@ O visual foi inspirado em dashboards administrativos:
 
 Tokens específicos:
 
-- Relatórios:
+- Dashboard:
   - títulos: `#000C63`
   - valores: `#000C2C`
 - Assinaturas:
@@ -76,11 +92,19 @@ Comandos rodados com sucesso:
 Também foram validados:
 
 - `/` retorna 200.
-- `/relatorios` retorna 200.
+- `/dashboard` retorna 200.
+- `/relatorios` redireciona para `/dashboard`.
 - `/nova` retorna 200.
+- `/cadastro` retorna 200.
+- `/login` retorna 200.
 - `/editar/999` retorna 404.
 - POST sem CSRF retorna 400.
+- POST sem CSRF em cadastro, login e logout retorna 400.
+- Usuário anônimo é redirecionado para `/login`.
+- IDs de outro usuário retornam 404.
 - Formulário inválido mostra mensagens de erro.
+- Cabeçalhos `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy` são enviados.
+- `APP_ENV=production` com chave local falha na inicialização.
 
 ## Observações Para o Próximo Desktop
 

@@ -16,44 +16,46 @@ def _row_to_subscription(row) -> Subscription:
 
 
 class SubscriptionRepository:
-    def list_active(self) -> list[Subscription]:
+    def list_active(self, user_id: int) -> list[Subscription]:
         rows = get_db().execute(
             """
             SELECT id, nome, valor, frequencia, vencimento, categoria, divisao, ativo
             FROM assinatura
-            WHERE ativo = 1
+            WHERE ativo = 1 AND user_id = ?
             ORDER BY vencimento ASC, nome ASC
-            """
+            """,
+            (user_id,),
         ).fetchall()
         return [_row_to_subscription(row) for row in rows]
 
-    def list_inactive(self) -> list[Subscription]:
+    def list_inactive(self, user_id: int) -> list[Subscription]:
         rows = get_db().execute(
             """
             SELECT id, nome, valor, frequencia, vencimento, categoria, divisao, ativo
             FROM assinatura
-            WHERE ativo = 0
+            WHERE ativo = 0 AND user_id = ?
             ORDER BY nome ASC
-            """
+            """,
+            (user_id,),
         ).fetchall()
         return [_row_to_subscription(row) for row in rows]
 
-    def get_by_id(self, subscription_id: int) -> Subscription | None:
+    def get_by_id(self, subscription_id: int, user_id: int) -> Subscription | None:
         row = get_db().execute(
             """
             SELECT id, nome, valor, frequencia, vencimento, categoria, divisao, ativo
             FROM assinatura
-            WHERE id = ?
+            WHERE id = ? AND user_id = ?
             """,
-            (subscription_id,),
+            (subscription_id, user_id),
         ).fetchone()
         return _row_to_subscription(row) if row else None
 
-    def create(self, subscription: Subscription) -> None:
+    def create(self, subscription: Subscription, user_id: int) -> None:
         get_db().execute(
             """
-            INSERT INTO assinatura (nome, valor, frequencia, vencimento, categoria, divisao, ativo)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO assinatura (nome, valor, frequencia, vencimento, categoria, divisao, ativo, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 subscription.nome,
@@ -63,16 +65,17 @@ class SubscriptionRepository:
                 subscription.categoria,
                 subscription.divisao,
                 int(subscription.ativo),
+                user_id,
             ),
         )
         get_db().commit()
 
-    def update(self, subscription_id: int, subscription: Subscription) -> None:
+    def update(self, subscription_id: int, subscription: Subscription, user_id: int) -> None:
         get_db().execute(
             """
             UPDATE assinatura
             SET nome = ?, valor = ?, frequencia = ?, vencimento = ?, categoria = ?, divisao = ?, ativo = ?
-            WHERE id = ?
+            WHERE id = ? AND user_id = ?
             """,
             (
                 subscription.nome,
@@ -83,14 +86,21 @@ class SubscriptionRepository:
                 subscription.divisao,
                 int(subscription.ativo),
                 subscription_id,
+                user_id,
             ),
         )
         get_db().commit()
 
-    def deactivate(self, subscription_id: int) -> None:
-        get_db().execute("UPDATE assinatura SET ativo = 0 WHERE id = ?", (subscription_id,))
+    def deactivate(self, subscription_id: int, user_id: int) -> None:
+        get_db().execute(
+            "UPDATE assinatura SET ativo = 0 WHERE id = ? AND user_id = ?",
+            (subscription_id, user_id),
+        )
         get_db().commit()
 
-    def activate(self, subscription_id: int) -> None:
-        get_db().execute("UPDATE assinatura SET ativo = 1 WHERE id = ?", (subscription_id,))
+    def activate(self, subscription_id: int, user_id: int) -> None:
+        get_db().execute(
+            "UPDATE assinatura SET ativo = 1 WHERE id = ? AND user_id = ?",
+            (subscription_id, user_id),
+        )
         get_db().commit()

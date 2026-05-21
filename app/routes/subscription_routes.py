@@ -1,9 +1,9 @@
-from secrets import compare_digest, token_urlsafe
-
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
 from app.models.subscription import CATEGORIAS, FREQUENCIAS, Subscription
 from app.repositories.subscription_repository import SubscriptionRepository
+from app.routes.auth_routes import login_required
+from app.security import csrf_token, validate_csrf
 from app.services.subscription_service import SubscriptionService, ValidationError, parse_subscription_form
 
 
@@ -16,18 +16,6 @@ def _repository() -> SubscriptionRepository:
 
 def _service() -> SubscriptionService:
     return SubscriptionService(_repository())
-
-
-def _csrf_token() -> str:
-    if "csrf_token" not in session:
-        session["csrf_token"] = token_urlsafe(32)
-    return session["csrf_token"]
-
-
-def _validate_csrf() -> None:
-    token = request.form.get("csrf_token", "")
-    if not compare_digest(token, session.get("csrf_token", "")):
-        abort(400)
 
 
 def _subscription_to_form_data(subscription) -> dict:
@@ -45,7 +33,7 @@ def _subscription_to_form_data(subscription) -> dict:
 @subscription_bp.context_processor
 def inject_globals():
     return {
-        "csrf_token": _csrf_token,
+        "csrf_token": csrf_token,
         "frequencias": FREQUENCIAS,
         "categorias": CATEGORIAS,
     }
@@ -57,15 +45,23 @@ def money_filter(value: float) -> str:
 
 
 @subscription_bp.route("/")
+@login_required
 def index():
-    data = _service().dashboard()
+    data = _service().dashboard(session["user_id"])
     return render_template("index.html", **data)
 
 
 @subscription_bp.route("/relatorios")
+@login_required
 def reports():
-    data = _service().reports()
-    return render_template("reports.html", **data, title="Relatórios")
+    return redirect(url_for("subscriptions.dashboard"))
+
+
+@subscription_bp.route("/dashboard")
+@login_required
+def dashboard():
+    data = _service().reports(session["user_id"])
+    return render_template("reports.html", **data, title="Dashboard")
 
 
 @subscription_bp.route("/favicon.ico")
@@ -74,16 +70,17 @@ def favicon():
 
 
 @subscription_bp.route("/nova", methods=["GET", "POST"])
+@login_required
 def create_subscription():
     errors = {}
     form_data = {"ativo": True, "divisao": 1, "frequencia": "mensal", "categoria": "outros"}
 
     if request.method == "POST":
-        _validate_csrf()
+        validate_csrf()
         form_data = request.form.to_dict()
         try:
             subscription = parse_subscription_form(request.form)
-            _repository().create(subscription)
+            _repository().create(subscription, session["user_id"])
             flash("Assinatura cadastrada com sucesso.", "success")
             return redirect(url_for("subscriptions.index"))
         except ValidationError as error:
@@ -93,9 +90,10 @@ def create_subscription():
 
 
 @subscription_bp.route("/editar/<int:subscription_id>", methods=["GET", "POST"])
+@login_required
 def edit_subscription(subscription_id: int):
     repository = _repository()
-    existing = repository.get_by_id(subscription_id)
+    existing = repository.get_by_id(subscription_id, session["user_id"])
     if existing is None:
         abort(404)
 
@@ -103,11 +101,11 @@ def edit_subscription(subscription_id: int):
     form_data = _subscription_to_form_data(existing)
 
     if request.method == "POST":
-        _validate_csrf()
+        validate_csrf()
         form_data = request.form.to_dict()
         try:
             subscription = parse_subscription_form(request.form)
-            repository.update(subscription_id, subscription)
+            repository.update(subscription_id, subscription, session["user_id"])
             flash("Assinatura atualizada com sucesso.", "success")
             return redirect(url_for("subscriptions.index"))
         except ValidationError as error:
@@ -117,18 +115,24 @@ def edit_subscription(subscription_id: int):
 
 
 @subscription_bp.route("/excluir/<int:subscription_id>", methods=["POST"])
+@login_required
 def delete_subscription(subscription_id: int):
-    _validate_csrf()
-    _repository().deactivate(subscription_id)
+    validate_csrf()
+    repository = _repository()
+    if repository.get_by_id(subscription_id, session["user_id"]) is None:
+        abort(404)
+
+    repository.deactivate(subscription_id, session["user_id"])
     flash("Assinatura marcada como inativa.", "success")
     return redirect(url_for("subscriptions.index"))
 
 
 @subscription_bp.route("/duplicar/<int:subscription_id>", methods=["POST"])
+@login_required
 def duplicate_subscription(subscription_id: int):
-    _validate_csrf()
+    validate_csrf()
     repository = _repository()
-    existing = repository.get_by_id(subscription_id)
+    existing = repository.get_by_id(subscription_id, session["user_id"])
     if existing is None:
         abort(404)
 
@@ -142,15 +146,21 @@ def duplicate_subscription(subscription_id: int):
             categoria=existing.categoria,
             divisao=existing.divisao,
             ativo=existing.ativo,
-        )
+        ),
+        session["user_id"],
     )
     flash("Assinatura duplicada com sucesso.", "success")
     return redirect(url_for("subscriptions.index"))
 
 
 @subscription_bp.route("/reativar/<int:subscription_id>", methods=["POST"])
+@login_required
 def reactivate_subscription(subscription_id: int):
-    _validate_csrf()
-    _repository().activate(subscription_id)
+    validate_csrf()
+    repository = _repository()
+    if repository.get_by_id(subscription_id, session["user_id"]) is None:
+        abort(404)
+
+    repository.activate(subscription_id, session["user_id"])
     flash("Assinatura reativada com sucesso.", "success")
     return redirect(url_for("subscriptions.index"))

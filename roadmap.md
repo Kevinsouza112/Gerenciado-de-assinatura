@@ -8,9 +8,13 @@
 - Duplicação de assinaturas.
 - Filtros na tela principal.
 - Painel de totais.
-- Página de relatórios.
+- Dashboard financeiro.
 - Melhorias visuais inspiradas em dashboard.
 - Tema escuro.
+- Cadastro/login com sessão.
+- Isolamento de assinaturas por usuário.
+- Auditoria de segurança com correções de CSRF, debug, chave de produção, cabeçalhos e validação financeira.
+- `.env.example` para orientar configuração fora do desenvolvimento local.
 - Testes automatizados básicos.
 
 ## Próximas Melhorias Recomendadas
@@ -44,9 +48,9 @@
 
 6. Preparar para produção
    - Configurar `SECRET_KEY` via ambiente.
-   - Criar `.env.example`.
    - Criar instruções de deploy.
-   - Adicionar proteção básica de headers HTTP se publicar.
+   - Revisar CSP caso os scripts inline sejam movidos para arquivos estáticos.
+   - Considerar expiração/rotação de sessão em ambiente público.
 
 ## Ideias Futuras
 

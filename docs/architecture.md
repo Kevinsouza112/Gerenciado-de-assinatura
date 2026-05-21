@@ -6,16 +6,21 @@ A aplicação usa Flask com uma arquitetura simples em camadas:
 
 ```text
 app/
-|-- __init__.py
+    |-- __init__.py
+    |-- security.py
 |-- database/
 |   `-- connection.py
 |-- models/
-|   `-- subscription.py
+|   |-- subscription.py
+|   `-- user.py
 |-- repositories/
-|   `-- subscription_repository.py
+|   |-- subscription_repository.py
+|   `-- user_repository.py
 |-- routes/
+|   |-- auth_routes.py
 |   `-- subscription_routes.py
 |-- services/
+|   |-- auth_service.py
 |   `-- subscription_service.py
 `-- templates/
     |-- base.html
@@ -48,6 +53,15 @@ Responsabilidades:
 - Validar CSRF em POST.
 - Redirecionar após operações.
 - Mostrar mensagens com `flash`.
+- Proteger rotas privadas com sessão.
+
+Rotas GET privadas:
+
+- `/`
+- `/dashboard`
+- `/relatorios` redireciona para `/dashboard`
+- `/nova`
+- `/editar/<id>`
 
 Rotas POST protegidas por CSRF:
 
@@ -56,6 +70,7 @@ Rotas POST protegidas por CSRF:
 - `/excluir/<id>`
 - `/duplicar/<id>`
 - `/reativar/<id>`
+- `/logout`
 
 ### Serviço
 
@@ -66,8 +81,9 @@ Responsabilidades:
 - Validar dados do formulário.
 - Centralizar regras de negócio.
 - Montar dashboard.
-- Montar relatórios.
+- Montar dados do dashboard financeiro.
 - Calcular vencimentos próximos.
+- Validar cadastro/login e gerar/verificar hash de senha.
 
 Funções importantes:
 
@@ -75,6 +91,8 @@ Funções importantes:
 - `is_due_soon`
 - `SubscriptionService.dashboard`
 - `SubscriptionService.reports`
+- `AuthService.register`
+- `AuthService.authenticate`
 
 ### Repositório
 
@@ -85,6 +103,8 @@ Responsabilidades:
 - Ler e escrever no SQLite.
 - Converter linhas do banco em `Subscription`.
 - Manter queries parametrizadas.
+- Filtrar assinaturas por `user_id`.
+- Persistir e buscar usuários.
 
 Métodos:
 
@@ -95,6 +115,9 @@ Métodos:
 - `update`
 - `deactivate`
 - `activate`
+- `UserRepository.get_by_id`
+- `UserRepository.get_by_email`
+- `UserRepository.create`
 
 ### Modelo
 
@@ -127,7 +150,18 @@ CREATE TABLE IF NOT EXISTS assinatura (
     vencimento INTEGER NOT NULL CHECK (vencimento BETWEEN 1 AND 31),
     categoria TEXT NOT NULL CHECK (categoria IN ('streaming', 'saúde', 'educação', 'outros')),
     divisao INTEGER NOT NULL DEFAULT 1 CHECK (divisao >= 1),
-    ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1))
+        ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+        user_id INTEGER
+)
+```
+
+```sql
+CREATE TABLE IF NOT EXISTS usuario (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
 ```
 
@@ -159,7 +193,7 @@ Tela principal com:
 
 ### `reports.html`
 
-Tela de relatórios com:
+Tela de dashboard com:
 
 - Cards financeiros.
 - Vencimentos próximos.
@@ -181,13 +215,24 @@ Medidas atuais:
 
 - Queries SQLite parametrizadas.
 - CSRF manual com token em sessão.
+- CSRF rejeita token ausente e sessão sem token esperado.
 - Validação backend de campos.
 - Constraints no SQLite.
 - Escape automático do Jinja.
+- Senhas armazenadas apenas como hash do Werkzeug.
+- Cadastro exige senha com mínimo de 6 caracteres, letra maiúscula, letra minúscula e caractere especial.
+- Cadastro e login validam formato de e-mail no serviço de autenticação.
+- A sugestão de domínio no cadastro é apenas UX; a validação real continua no backend.
+- Rotas de assinatura filtram por `user_id`; IDs de outro usuário retornam `404`.
+- Sessão usa `HttpOnly`, `SameSite=Lax` e duração permanente de 8 horas.
+- Produção exige chave real via `FLASK_SECRET_KEY`.
+- Respostas incluem cabeçalhos básicos contra sniffing, clickjacking e vazamento de permissões.
+- Formulário de assinatura rejeita valores não finitos, nome acima de 120, valor acima de R$ 1.000.000,00 e divisão acima de 1000.
 
 Ponto de atenção:
 
-- `SECRET_KEY` tem fallback local. Em produção, configurar via variável de ambiente.
+- `SECRET_KEY` tem fallback local apenas em desenvolvimento. Em produção, configurar `FLASK_APP_ENV=production` e `FLASK_SECRET_KEY`.
+- `SESSION_COOKIE_SECURE` deve ser `true` quando a aplicação estiver em HTTPS.
 
 ## Testes
 
@@ -202,8 +247,11 @@ Cobre:
 - Reativação.
 - Duplicação.
 - Exemplos mensais e anuais com divisão.
-- Página de relatórios.
+- Página de dashboard.
 - Presença do dark mode.
+- CSRF em rotas de autenticação e assinatura.
+- Cabeçalhos básicos de segurança.
+- Falha segura quando produção usa chave local.
 
 Comando:
 
