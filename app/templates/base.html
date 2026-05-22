@@ -7,12 +7,8 @@
     <script>
       (() => {
         const savedTheme = localStorage.getItem("subscription-theme");
-        const savedSidebar = localStorage.getItem("subscription-sidebar");
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         document.documentElement.dataset.theme = savedTheme || (prefersDark ? "dark" : "light");
-        if (savedSidebar === "collapsed") {
-          document.documentElement.dataset.sidebar = "collapsed";
-        }
       })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,7 +30,6 @@
         --app-active-bg: #020f34;
         --app-active-fg: #ffffff;
         --app-sidebar-width: 264px;
-        --app-sidebar-width-collapsed: 84px;
         --app-shadow: 0 18px 46px rgba(15, 23, 42, 0.06);
         --app-table-head: #f8faff;
         --app-hover: #eef3ff;
@@ -99,7 +94,7 @@
         align-items: center;
         display: flex;
         gap: 0.75rem;
-        justify-content: space-between;
+        justify-content: flex-start;
       }
 
       .app-brand {
@@ -107,21 +102,11 @@
         font-weight: 700;
       }
 
-      .brand-mark,
       .summary-icon,
       .sidebar-icon {
         align-items: center;
         display: inline-flex;
         justify-content: center;
-      }
-
-      .brand-mark {
-        background: linear-gradient(135deg, var(--app-primary), var(--app-primary-dark));
-        border-radius: 10px;
-        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
-        color: #ffffff;
-        height: 2.25rem;
-        width: 2.25rem;
       }
 
       .sidebar-chip {
@@ -176,24 +161,6 @@
         background: transparent;
         border: 0;
         width: 100%;
-      }
-
-      .sidebar-collapse-toggle {
-        align-items: center;
-        background: var(--app-surface);
-        border: 1px solid var(--app-border);
-        border-radius: 10px;
-        color: var(--app-navy);
-        display: inline-flex;
-        flex: 0 0 auto;
-        height: 2.25rem;
-        justify-content: center;
-        width: 2.25rem;
-      }
-
-      .sidebar-collapse-toggle:hover {
-        background: var(--app-hover);
-        color: var(--app-primary);
       }
 
       .sidebar-toggle .bi-chevron-down {
@@ -253,36 +220,6 @@
         transition: margin-left 0.2s ease;
       }
 
-      [data-sidebar="collapsed"] .app-sidebar {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-        width: var(--app-sidebar-width-collapsed);
-      }
-
-      [data-sidebar="collapsed"] .app-content {
-        margin-left: var(--app-sidebar-width-collapsed);
-      }
-
-      [data-sidebar="collapsed"] .sidebar-header,
-      [data-sidebar="collapsed"] .app-brand,
-      [data-sidebar="collapsed"] .sidebar-link,
-      [data-sidebar="collapsed"] .sidebar-sublink {
-        justify-content: center;
-      }
-
-      [data-sidebar="collapsed"] .brand-text,
-      [data-sidebar="collapsed"] .sidebar-chip,
-      [data-sidebar="collapsed"] .sidebar-label,
-      [data-sidebar="collapsed"] .sidebar-toggle .bi-chevron-down {
-        display: none;
-      }
-
-      [data-sidebar="collapsed"] .sidebar-link,
-      [data-sidebar="collapsed"] .sidebar-sublink {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-      }
-
       .app-topbar {
         align-items: center;
         display: flex;
@@ -324,12 +261,34 @@
         font-weight: 700;
       }
 
+      .btn-outline-secondary {
+        --bs-btn-color: var(--app-navy);
+        --bs-btn-border-color: var(--app-border);
+        --bs-btn-hover-bg: var(--app-hover);
+        --bs-btn-hover-border-color: var(--app-border);
+        --bs-btn-hover-color: var(--app-navy);
+        --bs-btn-active-bg: var(--app-active-bg);
+        --bs-btn-active-border-color: var(--app-active-bg);
+        --bs-btn-active-color: var(--app-active-fg);
+      }
+
       .btn-link {
         color: var(--app-primary);
       }
 
       [data-theme="dark"] .btn-link {
         color: #f4f4f5;
+      }
+
+      [data-theme="dark"] .btn-outline-secondary {
+        --bs-btn-color: #f4f4f5;
+        --bs-btn-border-color: #3f3f46;
+        --bs-btn-hover-bg: #27272a;
+        --bs-btn-hover-border-color: #52525b;
+        --bs-btn-hover-color: #ffffff;
+        --bs-btn-active-bg: #3f3f46;
+        --bs-btn-active-border-color: #52525b;
+        --bs-btn-active-color: #ffffff;
       }
 
       .btn-icon {
@@ -557,6 +516,16 @@
         color: #0f0f10 !important;
       }
 
+      [data-theme="dark"] .text-danger,
+      [data-theme="dark"] .dropdown-item.text-danger {
+        color: #fca5a5 !important;
+      }
+
+      [data-theme="dark"] .text-success,
+      [data-theme="dark"] .dropdown-item.text-success {
+        color: #86efac !important;
+      }
+
       .table-warning {
         --bs-table-bg: #fff8e5;
       }
@@ -568,6 +537,11 @@
 
       .alert {
         border-radius: 14px;
+      }
+
+      [data-theme="dark"] .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+        opacity: 0.85;
       }
 
       .report-tabs {
@@ -747,6 +721,11 @@
         color: var(--app-navy);
       }
 
+      [data-theme="dark"] .dropdown-item:focus,
+      [data-theme="dark"] .dropdown-item:hover {
+        color: #ffffff;
+      }
+
       .action-dropdown .dropdown-item {
         align-items: center;
         border-radius: 10px;
@@ -777,46 +756,145 @@
         color: var(--app-primary);
       }
 
+      [data-theme="dark"] .theme-toggle:hover,
+      [data-theme="dark"] .account-button:hover,
+      [data-theme="dark"] .account-button.show,
+      [data-theme="dark"] .action-menu-button:hover,
+      [data-theme="dark"] .action-menu-button.show {
+        color: #ffffff;
+      }
+
+      .topbar-actions {
+        align-items: center;
+        display: flex;
+        gap: 0.6rem;
+      }
+
+      .notification-button {
+        position: relative;
+      }
+
+      .notification-badge {
+        align-items: center;
+        background: #ef4444;
+        border: 2px solid var(--app-bg);
+        border-radius: 999px;
+        color: #ffffff;
+        display: inline-flex;
+        font-size: 0.68rem;
+        font-weight: 800;
+        height: 1.15rem;
+        justify-content: center;
+        min-width: 1.15rem;
+        padding: 0 0.25rem;
+        position: absolute;
+        right: -0.35rem;
+        top: -0.35rem;
+      }
+
+      .notification-menu {
+        border: 1px solid var(--app-border);
+        border-radius: 14px;
+        box-shadow: var(--app-shadow);
+        min-width: 20rem;
+        padding: 0.5rem;
+      }
+
+      .notification-item {
+        border-radius: 10px;
+        color: var(--app-navy);
+        display: block;
+        padding: 0.75rem;
+      }
+
+      .notification-item:hover {
+        background: var(--app-hover);
+        color: var(--app-navy);
+      }
+
+      .account-button {
+        align-items: center;
+        background: var(--app-surface);
+        border: 1px solid var(--app-border);
+        border-radius: 999px;
+        color: var(--app-navy);
+        display: inline-flex;
+        font-weight: 800;
+        gap: 0.45rem;
+        min-height: 2.35rem;
+        padding: 0.25rem 0.55rem 0.25rem 0.3rem;
+      }
+
+      .account-button:hover,
+      .account-button.show {
+        background: var(--app-hover);
+        color: var(--app-primary);
+      }
+
+      .account-avatar {
+        align-items: center;
+        background: var(--app-active-bg);
+        border-radius: 999px;
+        color: var(--app-active-fg);
+        display: inline-flex;
+        font-size: 0.78rem;
+        height: 1.8rem;
+        justify-content: center;
+        width: 1.8rem;
+      }
+
+      .account-avatar-lg {
+        font-size: 1.1rem;
+        height: 3.25rem;
+        width: 3.25rem;
+      }
+
+      .account-menu {
+        border: 1px solid var(--app-border);
+        border-radius: 18px;
+        box-shadow: var(--app-shadow);
+        min-width: 18rem;
+        padding: 0.7rem;
+      }
+
+      .account-menu-header {
+        border-bottom: 1px solid var(--app-border);
+        margin-bottom: 0.45rem;
+        padding: 0.65rem 0.65rem 0.8rem;
+      }
+
+      .account-menu .dropdown-item {
+        align-items: center;
+        border-radius: 10px;
+        display: flex;
+        font-weight: 700;
+        gap: 0.65rem;
+        padding: 0.7rem 0.65rem;
+      }
+
+      .profile-page .profile-hero {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), transparent 52%), var(--app-surface);
+      }
+
+      .profile-info-row {
+        align-items: center;
+        border-bottom: 1px solid var(--app-border);
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        padding: 1rem 0;
+      }
+
+      .profile-info-row:last-child {
+        border-bottom: 0;
+      }
+
       @media (max-width: 991.98px) {
         .app-sidebar {
           min-height: auto;
           position: sticky;
           top: 0;
           width: 100%;
-        }
-
-        .sidebar-collapse-toggle {
-          display: none;
-        }
-
-        [data-sidebar="collapsed"] .app-sidebar {
-          padding: 1.25rem 1rem;
-          width: 100%;
-        }
-
-        [data-sidebar="collapsed"] .app-content {
-          margin-left: 0;
-        }
-
-        [data-sidebar="collapsed"] .sidebar-header {
-          justify-content: flex-start;
-        }
-
-        [data-sidebar="collapsed"] .app-brand,
-        [data-sidebar="collapsed"] .sidebar-link,
-        [data-sidebar="collapsed"] .sidebar-sublink {
-          justify-content: flex-start;
-        }
-
-        [data-sidebar="collapsed"] .brand-text,
-        [data-sidebar="collapsed"] .sidebar-chip,
-        [data-sidebar="collapsed"] .sidebar-label,
-        [data-sidebar="collapsed"] .sidebar-toggle .bi-chevron-down {
-          display: inline-flex;
-        }
-
-        [data-sidebar="collapsed"] .sidebar-subnav {
-          display: grid;
         }
 
         .sidebar-nav {
@@ -856,49 +934,36 @@
       <aside class="app-sidebar">
         <div class="sidebar-header">
           <a class="app-brand d-flex align-items-center gap-2 fw-bold fs-4" href="{{ url_for('subscriptions.dashboard') }}">
-            <span class="brand-mark"><i class="bi bi-wallet2" aria-hidden="true"></i></span>
-            <span class="brand-text">Assina</span>
+            <span class="brand-text">Recorra</span>
           </a>
-          {% if current_user %}
-            <button class="sidebar-collapse-toggle" id="sidebar-collapse-toggle" type="button" aria-label="Recolher menu lateral" title="Recolher menu lateral">
-              <i class="bi bi-layout-sidebar-inset" id="sidebar-collapse-icon" aria-hidden="true"></i>
-            </button>
-          {% endif %}
         </div>
         <div class="sidebar-chip">Central de assinaturas</div>
         <nav class="sidebar-nav" aria-label="Navegação principal">
           {% if current_user %}
             <a class="sidebar-link {% if request.endpoint == 'subscriptions.dashboard' %}active{% endif %}" href="{{ url_for('subscriptions.dashboard') }}" title="Dashboard">
-              <span class="sidebar-icon"><i class="bi bi-bar-chart" aria-hidden="true"></i></span>
+              <span class="sidebar-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></span>
               <span class="sidebar-label">Dashboard</span>
             </a>
             {% set subscriptions_menu_open = request.endpoint in ['subscriptions.index', 'subscriptions.create_subscription', 'subscriptions.edit_subscription'] %}
             <div class="sidebar-group">
               <button class="sidebar-link sidebar-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#subscriptions-menu" aria-expanded="{{ 'true' if subscriptions_menu_open else 'false' }}" aria-controls="subscriptions-menu" title="Assinaturas">
-                <span class="sidebar-icon"><i class="bi bi-credit-card-2-front" aria-hidden="true"></i></span>
+                <span class="sidebar-icon"><i class="bi bi-collection" aria-hidden="true"></i></span>
                 <span class="sidebar-label">Assinaturas</span>
                 <i class="bi bi-chevron-down" aria-hidden="true"></i>
               </button>
               <div class="collapse {% if subscriptions_menu_open %}show{% endif %}" id="subscriptions-menu">
                 <div class="sidebar-subnav">
                   <a class="sidebar-sublink {% if request.endpoint == 'subscriptions.index' %}active{% endif %}" href="{{ url_for('subscriptions.index') }}">
-                    <span class="sidebar-icon"><i class="bi bi-list-check" aria-hidden="true"></i></span>
+                    <span class="sidebar-icon"><i class="bi bi-card-checklist" aria-hidden="true"></i></span>
                     <span class="sidebar-label">Assinaturas</span>
                   </a>
                   <a class="sidebar-sublink {% if request.endpoint == 'subscriptions.create_subscription' %}active{% endif %}" href="{{ url_for('subscriptions.create_subscription') }}">
-                    <span class="sidebar-icon"><i class="bi bi-plus-circle" aria-hidden="true"></i></span>
+                    <span class="sidebar-icon"><i class="bi bi-plus-square" aria-hidden="true"></i></span>
                     <span class="sidebar-label">Nova assinatura</span>
                   </a>
                 </div>
               </div>
             </div>
-            <form method="post" action="{{ url_for('auth.logout') }}" class="mt-2">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button class="sidebar-link" type="submit" title="Sair">
-                <span class="sidebar-icon"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></span>
-                <span class="sidebar-label">Sair</span>
-              </button>
-            </form>
           {% else %}
             <a class="sidebar-link {% if request.endpoint == 'auth.login' %}active{% endif %}" href="{{ url_for('auth.login') }}">
               <span class="sidebar-icon"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i></span>
@@ -924,9 +989,73 @@
               {% endif %}
             </div>
           </div>
-          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Alternar modo escuro" title="Alternar modo escuro">
-            <i class="bi bi-moon-stars" id="theme-toggle-icon" aria-hidden="true"></i>
-          </button>
+          <div class="topbar-actions">
+            {% if current_user %}
+              <div class="dropdown">
+                <button class="theme-toggle notification-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notificações" title="Notificações">
+                  <i class="bi bi-bell" aria-hidden="true"></i>
+                  {% if notifications_count %}
+                    <span class="notification-badge">{{ notifications_count }}</span>
+                  {% endif %}
+                </button>
+                <div class="dropdown-menu dropdown-menu-end notification-menu">
+                  <div class="px-2 py-2">
+                    <div class="fw-bold">Notificações</div>
+                    <div class="text-secondary small">Assinaturas dentro do prazo configurado.</div>
+                  </div>
+                  <div class="dropdown-divider"></div>
+                  {% for notification in notifications %}
+                    <a class="notification-item" href="{{ url_for('subscriptions.edit_subscription', subscription_id=notification.subscription.id) }}">
+                      <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-bell-fill text-warning mt-1" aria-hidden="true"></i>
+                        <div>
+                          <div class="fw-bold">{{ notification.subscription.nome }}</div>
+                          <div class="text-secondary small">
+                            {{ notification.message }} · dia {{ notification.subscription.vencimento }}
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  {% else %}
+                    <div class="px-2 py-3 text-secondary small">Nenhuma assinatura no prazo de notificação.</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+            <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Alternar modo escuro" title="Alternar modo escuro">
+              <i class="bi bi-moon-stars" id="theme-toggle-icon" aria-hidden="true"></i>
+            </button>
+            {% if current_user %}
+              <div class="dropdown">
+                <button class="account-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu da conta" title="Menu da conta">
+                  <span class="account-avatar">{{ account_initials }}</span>
+                  <i class="bi bi-chevron-down small" aria-hidden="true"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end account-menu">
+                  <div class="account-menu-header">
+                    <div class="d-flex align-items-center gap-3">
+                      <span class="account-avatar">{{ account_initials }}</span>
+                      <div class="min-w-0">
+                        <div class="fw-bold">{{ current_user.nome }}</div>
+                        <div class="text-secondary small text-truncate">{{ current_user.email }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                    <i class="bi bi-person-gear" aria-hidden="true"></i>
+                    Minha Conta
+                  </a>
+                  <form method="post" action="{{ url_for('auth.logout') }}" class="m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="dropdown-item" type="submit">
+                      <i class="bi bi-power" aria-hidden="true"></i>
+                      Sair
+                    </button>
+                  </form>
+                </div>
+              </div>
+            {% endif %}
+          </div>
         </header>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -968,36 +1097,6 @@
             const nextTheme = root.dataset.theme === "dark" ? "light" : "dark";
             localStorage.setItem(storageKey, nextTheme);
             applyTheme(nextTheme);
-          });
-        }
-      })();
-    </script>
-    <script>
-      (() => {
-        const root = document.documentElement;
-        const button = document.getElementById("sidebar-collapse-toggle");
-        const icon = document.getElementById("sidebar-collapse-icon");
-        const storageKey = "subscription-sidebar";
-
-        const applySidebar = (state) => {
-          const collapsed = state === "collapsed";
-          root.dataset.sidebar = collapsed ? "collapsed" : "expanded";
-          if (button) {
-            button.setAttribute("aria-label", collapsed ? "Expandir menu lateral" : "Recolher menu lateral");
-            button.setAttribute("title", collapsed ? "Expandir menu lateral" : "Recolher menu lateral");
-          }
-          if (icon) {
-            icon.className = collapsed ? "bi bi-layout-sidebar" : "bi bi-layout-sidebar-inset";
-          }
-        };
-
-        applySidebar(localStorage.getItem(storageKey) || "expanded");
-
-        if (button) {
-          button.addEventListener("click", () => {
-            const nextState = root.dataset.sidebar === "collapsed" ? "expanded" : "collapsed";
-            localStorage.setItem(storageKey, nextState);
-            applySidebar(nextState);
           });
         }
       })();

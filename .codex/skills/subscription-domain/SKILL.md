@@ -17,6 +17,7 @@ Assinatura:
   categoria   -> "streaming" | "saúde" | "educação" | "outros"
   divisao     -> inteiro de 1 a 1000, padrão = 1
   ativo       -> booleano (True = ativa, False = cancelada/inativa)
+  notificar_dias_antes -> inteiro de 0 a 31, padrão = 7
   user_id     -> dono da assinatura
 ```
 
@@ -75,6 +76,13 @@ def is_due_soon(vencimento: int, today: date | None = None) -> bool:
     return False
 ```
 
+## Regras de Notificação
+
+- Notificações consideram apenas assinaturas ativas do usuário logado.
+- A notificação aparece quando `days_until_due(vencimento) <= notificar_dias_antes`.
+- `notificar_dias_antes = 0` significa notificar apenas no dia do vencimento.
+- A lista deve ser ordenada primeiro por menor quantidade de dias até o vencimento e depois por nome.
+
 ## Regras Gerais
 
 - `divisao` nunca pode ser menor que 1.
@@ -82,6 +90,7 @@ def is_due_soon(vencimento: int, today: date | None = None) -> bool:
 - `vencimento` deve ser entre 1 e 31.
 - `valor` precisa ser finito; rejeitar `NaN` e `Infinity`.
 - Assinaturas inativas (`ativo = False`) não entram nos cálculos do dashboard.
+- Assinaturas inativas não entram nas notificações.
 - Assinaturas inativas são exibidas em seção separada na listagem.
 - Ao cancelar uma assinatura, setar `ativo = False`; não deletar fisicamente.
 - Toda operação de assinatura deve filtrar por `user_id`.

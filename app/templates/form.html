@@ -11,7 +11,7 @@
             <p class="text-secondary mb-0">Preencha os dados para manter seus custos atualizados.</p>
           </div>
           <a class="btn btn-outline-secondary btn-icon" href="{{ url_for('subscriptions.index') }}">
-            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            <i class="bi bi-arrow-left-short" aria-hidden="true"></i>
             Voltar
           </a>
         </div>
@@ -21,10 +21,10 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="d-flex align-items-center gap-2 mb-4">
-          <span class="summary-icon summary-icon-primary"><i class="bi bi-credit-card-2-front" aria-hidden="true"></i></span>
+          <span class="summary-icon summary-icon-primary"><i class="bi bi-receipt" aria-hidden="true"></i></span>
         <div>
             <div class="fw-bold">Dados da assinatura</div>
-            <div class="text-secondary small">Valores, frequência, vencimento e divisão.</div>
+            <div class="text-secondary small">Valores, frequência, vencimento, divisão e notificação.</div>
           </div>
         </div>
 
@@ -73,6 +73,17 @@
             {% if errors.divisao %}<div class="invalid-feedback">{{ errors.divisao }}</div>{% endif %}
           </div>
 
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="notificar_dias_antes">Notificar antes do vencimento</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-bell" aria-hidden="true"></i></span>
+              <input class="form-control {% if errors.notificar_dias_antes %}is-invalid{% endif %}" id="notificar_dias_antes" name="notificar_dias_antes" type="number" min="0" max="31" required value="{{ form_data.get('notificar_dias_antes', 7) }}">
+              <span class="input-group-text">dias</span>
+              {% if errors.notificar_dias_antes %}<div class="invalid-feedback">{{ errors.notificar_dias_antes }}</div>{% endif %}
+            </div>
+            <div class="form-text text-secondary">Use 0 para avisar apenas no dia do vencimento.</div>
+          </div>
+
           <div class="col-12">
             <div class="form-check form-switch">
               {% set ativo_value = form_data.get('ativo', true) %}
@@ -84,11 +95,11 @@
 
         <div class="d-flex justify-content-end gap-2 mt-4">
           <a class="btn btn-outline-secondary btn-icon" href="{{ url_for('subscriptions.index') }}">
-            <i class="bi bi-x-lg" aria-hidden="true"></i>
+            <i class="bi bi-x-circle" aria-hidden="true"></i>
             Cancelar
           </a>
           <button class="btn btn-primary btn-icon" type="submit">
-            <i class="bi bi-check2" aria-hidden="true"></i>
+            <i class="bi bi-check-circle" aria-hidden="true"></i>
             Salvar
           </button>
         </div>

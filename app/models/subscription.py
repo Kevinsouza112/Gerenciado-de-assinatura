@@ -15,6 +15,7 @@ class Subscription:
     categoria: str
     divisao: int = 1
     ativo: bool = True
+    notificar_dias_antes: int = 7
 
     @property
     def valor_mensal(self) -> float:

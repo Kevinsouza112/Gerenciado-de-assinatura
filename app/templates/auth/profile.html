@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="profile-page">
+    <div class="app-panel profile-hero p-4 p-lg-5 mb-4">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="account-avatar account-avatar-lg">{{ initials }}</span>
+          <div>
+            <div class="page-kicker mb-2">Minha Conta</div>
+            <h1 class="h2 fw-bold mb-1">{{ user.nome }}</h1>
+            <p class="text-secondary mb-0">Gerencie seus dados de acesso.</p>
+          </div>
+        </div>
+        <a class="btn btn-outline-secondary btn-icon" href="{{ url_for('subscriptions.dashboard') }}">
+          <i class="bi bi-arrow-left-short" aria-hidden="true"></i>
+          Dashboard
+        </a>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-12 col-xl-5">
+        <section class="app-panel p-4 h-100" aria-labelledby="account-info-title">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="summary-icon summary-icon-primary"><i class="bi bi-person-vcard" aria-hidden="true"></i></span>
+            <div>
+              <h2 class="h5 fw-bold mb-1" id="account-info-title">Dados da conta</h2>
+              <p class="text-secondary mb-0">Informações usadas para identificar seu acesso.</p>
+            </div>
+          </div>
+
+          <div class="profile-info-row">
+            <div>
+              <div class="summary-label">Nome</div>
+              <div class="fw-bold">{{ user.nome }}</div>
+            </div>
+            <i class="bi bi-person text-secondary" aria-hidden="true"></i>
+          </div>
+          <div class="profile-info-row">
+            <div class="min-w-0">
+              <div class="summary-label">E-mail</div>
+              <div class="fw-bold text-break">{{ user.email }}</div>
+            </div>
+            <i class="bi bi-envelope text-secondary" aria-hidden="true"></i>
+          </div>
+        </section>
+      </div>
+
+      <div class="col-12 col-xl-7">
+        <section class="app-panel p-4 h-100" aria-labelledby="change-password-title">
+          <div class="d-flex align-items-center gap-2 mb-4">
+            <span class="summary-icon summary-icon-warning"><i class="bi bi-shield-lock" aria-hidden="true"></i></span>
+            <div>
+              <h2 class="h5 fw-bold mb-1" id="change-password-title">Alterar senha</h2>
+              <p class="text-secondary mb-0">Confirme sua senha atual antes de definir uma nova.</p>
+            </div>
+          </div>
+
+          <form method="post" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="mb-3">
+              <label class="form-label" for="senha_atual">Senha atual</label>
+              <input class="form-control {% if errors.senha_atual %}is-invalid{% endif %}" id="senha_atual" name="senha_atual" type="password" autocomplete="current-password" required>
+              {% if errors.senha_atual %}<div class="invalid-feedback">{{ errors.senha_atual }}</div>{% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="nova_senha">Nova senha</label>
+              <input class="form-control {% if errors.nova_senha %}is-invalid{% endif %}" id="nova_senha" name="nova_senha" type="password" autocomplete="new-password" minlength="6" maxlength="128" required>
+              <div class="form-text text-secondary">Use maiúscula, minúscula e caractere especial.</div>
+              {% if errors.nova_senha %}<div class="invalid-feedback">{{ errors.nova_senha }}</div>{% endif %}
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label" for="confirmar_nova_senha">Confirmar nova senha</label>
+              <input class="form-control {% if errors.confirmar_nova_senha %}is-invalid{% endif %}" id="confirmar_nova_senha" name="confirmar_nova_senha" type="password" autocomplete="new-password" minlength="6" maxlength="128" required>
+              {% if errors.confirmar_nova_senha %}<div class="invalid-feedback">{{ errors.confirmar_nova_senha }}</div>{% endif %}
+            </div>
+
+            <button class="btn btn-primary btn-icon" type="submit">
+              <i class="bi bi-check-circle" aria-hidden="true"></i>
+              Alterar senha
+            </button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+{% endblock %}

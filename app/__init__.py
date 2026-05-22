@@ -25,9 +25,23 @@ def create_app(test_config: dict | None = None) -> Flask:
 
     if app.config["APP_ENV"] == "production" and app.config["SECRET_KEY"] == "dev-change-me":
         raise RuntimeError("Configure FLASK_SECRET_KEY antes de iniciar em producao.")
+    if app.config["APP_ENV"] == "production":
+        app.config["SESSION_COOKIE_SECURE"] = True
 
     @app.after_request
     def add_security_headers(response):
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; "
+            "img-src 'self' data:; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "frame-ancestors 'none'; "
+            "form-action 'self'"
+        )
+        response.headers.setdefault("Content-Security-Policy", csp)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")

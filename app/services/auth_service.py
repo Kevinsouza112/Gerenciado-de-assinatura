@@ -92,3 +92,25 @@ class AuthService:
             raise ValidationError(errors)
 
         return user
+
+    def change_password(self, user: User, form) -> None:
+        errors: dict[str, str] = {}
+        senha_atual = form.get("senha_atual", "")
+        nova_senha = form.get("nova_senha", "")
+        confirmar_nova_senha = form.get("confirmar_nova_senha", "")
+
+        if not check_password_hash(user.password_hash, senha_atual):
+            errors["senha_atual"] = "Senha atual incorreta."
+        if len(nova_senha) > MAX_PASSWORD_LENGTH:
+            errors["nova_senha"] = "A senha deve ter no máximo 128 caracteres."
+        elif not _password_is_strong(nova_senha):
+            errors["nova_senha"] = PASSWORD_REQUIREMENTS_MESSAGE
+        elif senha_atual and nova_senha == senha_atual:
+            errors["nova_senha"] = "A nova senha deve ser diferente da senha atual."
+        if nova_senha != confirmar_nova_senha:
+            errors["confirmar_nova_senha"] = "As senhas não conferem."
+
+        if errors:
+            raise ValidationError(errors)
+
+        self.repository.update_password(user.id, generate_password_hash(nova_senha))

@@ -22,11 +22,17 @@ O projeto já possui:
 - Senhas exigem maiúscula, minúscula e caractere especial.
 - Cadastro e login validam formato de e-mail no backend.
 - Cadastro tem sugestão de domínio de e-mail e confirmação de senha.
+- Menu de conta no topo com acesso a Minha Conta e Sair.
+- Página de perfil com dados do usuário e alteração de senha validada pela senha atual.
 - Dashboard é a tela inicial após login.
 - `/relatorios` existe apenas como redirecionamento legado para `/dashboard`.
+- Ícone interno de notificações no topo para assinaturas dentro do prazo configurado.
+- Formulário de assinatura permite configurar `notificar_dias_antes` de 0 a 31.
 - CSRF rejeita POST sem token enviado e sem token esperado na sessão.
 - Produção exige `FLASK_SECRET_KEY` quando `FLASK_APP_ENV=production`.
+- Produção força cookie de sessão com `Secure`.
 - Respostas incluem cabeçalhos básicos de segurança.
+- Respostas incluem CSP básica para reduzir superfície de XSS e recursos externos.
 - Testes automatizados cobrindo fluxo principal e exemplos.
 
 ## Decisões Tomadas
@@ -51,9 +57,12 @@ O projeto já possui:
 - Inativas ficam visíveis, mas não entram nos totais.
 - Usuários só podem listar, editar, inativar, duplicar e reativar assinaturas próprias.
 - Senhas são salvas apenas como hash e devem ter pelo menos 6 caracteres, uma maiúscula, uma minúscula e um caractere especial.
+- Alteração de senha exige senha atual correta, confirmação da nova senha e reaproveita a regra de senha forte.
 - Valores de assinatura precisam ser finitos, não negativos e até R$ 1.000.000,00.
 - O nome da assinatura tem limite backend de 120 caracteres.
 - A divisão tem limite backend de 1000 pessoas.
+- Notificações usam apenas assinaturas ativas do usuário logado.
+- Se `notificar_dias_antes` for 0, a assinatura notifica apenas no dia do vencimento.
 
 ## Design Atual
 
@@ -97,6 +106,7 @@ Também foram validados:
 - `/nova` retorna 200.
 - `/cadastro` retorna 200.
 - `/login` retorna 200.
+- `/perfil` retorna 200 quando autenticado e redireciona anônimo para `/login`.
 - `/editar/999` retorna 404.
 - POST sem CSRF retorna 400.
 - POST sem CSRF em cadastro, login e logout retorna 400.
@@ -104,7 +114,11 @@ Também foram validados:
 - IDs de outro usuário retornam 404.
 - Formulário inválido mostra mensagens de erro.
 - Cabeçalhos `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy` são enviados.
+- Cabeçalho `Content-Security-Policy` é enviado.
 - `APP_ENV=production` com chave local falha na inicialização.
+- `APP_ENV=production` força `SESSION_COOKIE_SECURE=True`.
+- Troca de senha valida senha atual, senha forte, confirmação e permite login apenas com a nova senha.
+- Teste adversarial confirmou XSS escapado, POST sem CSRF rejeitado, IDs de outro usuário com 404 e login com payload SQLi-style rejeitado.
 
 ## Observações Para o Próximo Desktop
 

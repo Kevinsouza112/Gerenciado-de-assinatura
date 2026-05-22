@@ -27,6 +27,7 @@ def _subscription_to_form_data(subscription) -> dict:
         "categoria": subscription.categoria,
         "divisao": subscription.divisao,
         "ativo": subscription.ativo,
+        "notificar_dias_antes": subscription.notificar_dias_antes,
     }
 
 
@@ -73,7 +74,13 @@ def favicon():
 @login_required
 def create_subscription():
     errors = {}
-    form_data = {"ativo": True, "divisao": 1, "frequencia": "mensal", "categoria": "outros"}
+    form_data = {
+        "ativo": True,
+        "divisao": 1,
+        "frequencia": "mensal",
+        "categoria": "outros",
+        "notificar_dias_antes": 7,
+    }
 
     if request.method == "POST":
         validate_csrf()
@@ -146,6 +153,7 @@ def duplicate_subscription(subscription_id: int):
             categoria=existing.categoria,
             divisao=existing.divisao,
             ativo=existing.ativo,
+            notificar_dias_antes=existing.notificar_dias_antes,
         ),
         session["user_id"],
     )

@@ -1,3 +1,4 @@
+from calendar import monthrange
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
@@ -17,6 +18,7 @@ REPORT_COLORS = {
 MAX_SUBSCRIPTION_NAME_LENGTH = 120
 MAX_SUBSCRIPTION_VALUE = Decimal("1000000")
 MAX_DIVISION = 1000
+MAX_NOTIFICATION_DAYS = 31
 
 
 class ValidationError(Exception):
@@ -73,6 +75,14 @@ def parse_subscription_form(form) -> Subscription:
         divisao = 1
         errors["divisao"] = "Informe um número válido."
 
+    try:
+        notificar_dias_antes = int(form.get("notificar_dias_antes", "7"))
+        if not 0 <= notificar_dias_antes <= MAX_NOTIFICATION_DAYS:
+            errors["notificar_dias_antes"] = "Informe uma notificação entre 0 e 31 dias."
+    except ValueError:
+        notificar_dias_antes = 7
+        errors["notificar_dias_antes"] = "Informe um número válido."
+
     ativo = form.get("ativo") == "on"
 
     if errors:
@@ -87,15 +97,32 @@ def parse_subscription_form(form) -> Subscription:
         categoria=categoria,
         divisao=divisao,
         ativo=ativo,
+        notificar_dias_antes=notificar_dias_antes,
     )
 
 
-def is_due_soon(vencimento: int, today: date | None = None) -> bool:
+def _safe_month_date(year: int, month: int, day: int) -> date:
+    last_day = monthrange(year, month)[1]
+    return date(year, month, min(day, last_day))
+
+
+def days_until_due(vencimento: int, today: date | None = None) -> int:
     current_date = today or date.today()
-    for offset in range(0, 8):
-        if (current_date + timedelta(days=offset)).day == vencimento:
-            return True
-    return False
+    due_date = _safe_month_date(current_date.year, current_date.month, vencimento)
+    if due_date < current_date:
+        if current_date.month == 12:
+            due_date = _safe_month_date(current_date.year + 1, 1, vencimento)
+        else:
+            due_date = _safe_month_date(current_date.year, current_date.month + 1, vencimento)
+    return (due_date - current_date).days
+
+
+def is_due_soon(vencimento: int, today: date | None = None) -> bool:
+    return days_until_due(vencimento, today) <= 7
+
+
+def should_notify(subscription: Subscription, today: date | None = None) -> bool:
+    return days_until_due(subscription.vencimento, today) <= subscription.notificar_dias_antes
 
 
 def _percent(value: float, total: float) -> int:
@@ -124,7 +151,23 @@ class SubscriptionService:
                 "total_bruto_anual": total_bruto_mensal * 12,
                 "total_real_anual": total_real_mensal * 12,
             },
+            "notifications": self.notifications(user_id),
         }
+
+    def notifications(self, user_id: int) -> list[dict]:
+        subscriptions = self.repository.list_active(user_id)
+        rows = []
+        for item in subscriptions:
+            days_left = days_until_due(item.vencimento)
+            if days_left <= item.notificar_dias_antes:
+                rows.append(
+                    {
+                        "subscription": item,
+                        "days_left": days_left,
+                        "message": "Vence hoje" if days_left == 0 else f"Vence em {days_left} dia{'s' if days_left != 1 else ''}",
+                    }
+                )
+        return sorted(rows, key=lambda row: (row["days_left"], row["subscription"].nome.lower()))
 
     def reports(self, user_id: int) -> dict:
         subscriptions = self.repository.list_active(user_id)

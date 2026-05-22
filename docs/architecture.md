@@ -26,6 +26,8 @@ app/
     |-- base.html
     |-- form.html
     |-- index.html
+    |-- auth/
+    |   `-- profile.html
     `-- reports.html
 tests/
 `-- test_app.py
@@ -62,6 +64,7 @@ Rotas GET privadas:
 - `/relatorios` redireciona para `/dashboard`
 - `/nova`
 - `/editar/<id>`
+- `/perfil`
 
 Rotas POST protegidas por CSRF:
 
@@ -70,6 +73,7 @@ Rotas POST protegidas por CSRF:
 - `/excluir/<id>`
 - `/duplicar/<id>`
 - `/reativar/<id>`
+- `/perfil`
 - `/logout`
 
 ### Serviço
@@ -93,6 +97,7 @@ Funções importantes:
 - `SubscriptionService.reports`
 - `AuthService.register`
 - `AuthService.authenticate`
+- `AuthService.change_password`
 
 ### Repositório
 
@@ -118,6 +123,7 @@ Métodos:
 - `UserRepository.get_by_id`
 - `UserRepository.get_by_email`
 - `UserRepository.create`
+- `UserRepository.update_password`
 
 ### Modelo
 
@@ -151,6 +157,7 @@ CREATE TABLE IF NOT EXISTS assinatura (
     categoria TEXT NOT NULL CHECK (categoria IN ('streaming', 'saúde', 'educação', 'outros')),
     divisao INTEGER NOT NULL DEFAULT 1 CHECK (divisao >= 1),
         ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+        notificar_dias_antes INTEGER NOT NULL DEFAULT 7 CHECK (notificar_dias_antes BETWEEN 0 AND 31),
         user_id INTEGER
 )
 ```
@@ -174,6 +181,8 @@ Contém:
 - HTML base.
 - Sidebar.
 - Topbar.
+- Ícone interno de notificações no topo para assinaturas dentro do prazo configurado.
+- Menu de conta no topo com iniciais, Minha Conta e Sair.
 - Flash messages.
 - Bootstrap CDN.
 - CSS global.
@@ -209,6 +218,14 @@ Formulário compartilhado para:
 - Nova assinatura.
 - Editar assinatura.
 
+### `auth/profile.html`
+
+Tela privada de Minha Conta com:
+
+- Nome e e-mail do usuário autenticado.
+- Formulário de alteração de senha.
+- Validação por senha atual, senha forte e confirmação da nova senha.
+
 ## Segurança
 
 Medidas atuais:
@@ -221,13 +238,18 @@ Medidas atuais:
 - Escape automático do Jinja.
 - Senhas armazenadas apenas como hash do Werkzeug.
 - Cadastro exige senha com mínimo de 6 caracteres, letra maiúscula, letra minúscula e caractere especial.
+- Alteração de senha exige senha atual correta, nova senha forte, confirmação e salva apenas novo hash.
 - Cadastro e login validam formato de e-mail no serviço de autenticação.
 - A sugestão de domínio no cadastro é apenas UX; a validação real continua no backend.
 - Rotas de assinatura filtram por `user_id`; IDs de outro usuário retornam `404`.
 - Sessão usa `HttpOnly`, `SameSite=Lax` e duração permanente de 8 horas.
+- Em produção, sessão força `Secure=True`.
 - Produção exige chave real via `FLASK_SECRET_KEY`.
-- Respostas incluem cabeçalhos básicos contra sniffing, clickjacking e vazamento de permissões.
+- Respostas incluem CSP básica e cabeçalhos contra sniffing, clickjacking e vazamento de permissões.
 - Formulário de assinatura rejeita valores não finitos, nome acima de 120, valor acima de R$ 1.000.000,00 e divisão acima de 1000.
+- Notificações internas são calculadas no serviço a partir de `vencimento` e `notificar_dias_antes`.
+- O ícone de notificações no `base.html` mostra apenas assinaturas ativas do usuário logado.
+- O menu Minha Conta é exibido apenas para usuário autenticado.
 
 Ponto de atenção:
 
@@ -251,7 +273,11 @@ Cobre:
 - Presença do dark mode.
 - CSRF em rotas de autenticação e assinatura.
 - Cabeçalhos básicos de segurança.
+- CSP e cookie seguro em produção.
 - Falha segura quando produção usa chave local.
+- Campo de notificação por assinatura.
+- Página de perfil e menu Minha Conta.
+- Validação e persistência da alteração de senha.
 
 Comando:
 

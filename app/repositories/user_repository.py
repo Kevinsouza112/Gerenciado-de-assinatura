@@ -44,3 +44,14 @@ class UserRepository:
         )
         get_db().commit()
         return User(id=cursor.lastrowid, nome=nome, email=email, password_hash=password_hash)
+
+    def update_password(self, user_id: int, password_hash: str) -> None:
+        get_db().execute(
+            """
+            UPDATE usuario
+            SET password_hash = ?
+            WHERE id = ?
+            """,
+            (password_hash, user_id),
+        )
+        get_db().commit()

@@ -1,6 +1,7 @@
 import re
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 from app import create_app
@@ -61,6 +62,7 @@ class SubscriptionAppTest(unittest.TestCase):
             "vencimento": "10",
             "categoria": "outros",
             "divisao": "1",
+            "notificar_dias_antes": "7",
             "ativo": "on",
         }
         data.update(overrides)
@@ -81,6 +83,7 @@ class SubscriptionAppTest(unittest.TestCase):
                 "vencimento": "15",
                 "categoria": "streaming",
                 "divisao": "2",
+                "notificar_dias_antes": "5",
                 "ativo": "on",
             },
             follow_redirects=True,
@@ -111,6 +114,7 @@ class SubscriptionAppTest(unittest.TestCase):
                 "vencimento": "20",
                 "categoria": "educação",
                 "divisao": "4",
+                "notificar_dias_antes": "10",
                 "ativo": "on",
             },
             follow_redirects=True,
@@ -233,12 +237,21 @@ class SubscriptionAppTest(unittest.TestCase):
                     "vencimento": "10",
                     "categoria": "outros",
                     "divisao": "1",
+                    "notificar_dias_antes": "7",
                     "ativo": "on",
                 },
             ),
             ("/excluir/1", {}),
             ("/duplicar/1", {}),
             ("/reativar/1", {}),
+            (
+                "/perfil",
+                {
+                    "senha_atual": "Segredo1!",
+                    "nova_senha": "NovaSenha1!",
+                    "confirmar_nova_senha": "NovaSenha1!",
+                },
+            ),
         ]
 
         for path, data in post_routes:
@@ -271,6 +284,7 @@ class SubscriptionAppTest(unittest.TestCase):
                 "vencimento": "40",
                 "categoria": "lazer",
                 "divisao": "0",
+                "notificar_dias_antes": "40",
                 "ativo": "on",
             },
         )
@@ -283,6 +297,7 @@ class SubscriptionAppTest(unittest.TestCase):
         self.assertIn("Informe um dia entre 1 e 31.", html)
         self.assertIn("Escolha uma categoria valida.", html)
         self.assertIn("A divisão deve ser no mínimo 1.", html)
+        self.assertIn("Informe uma notificação entre 0 e 31 dias.", html)
 
     def test_subscription_form_rejects_oversized_and_non_finite_values(self):
         self.register_user()
@@ -293,6 +308,7 @@ class SubscriptionAppTest(unittest.TestCase):
             ({"valor": "Infinity"}, "Informe um valor numérico válido."),
             ({"valor": "1000000.01"}, "Informe um valor de até R$ 1.000.000,00."),
             ({"divisao": "1001"}, "A divisão deve ser no máximo 1000."),
+            ({"notificar_dias_antes": "abc"}, "Informe um número válido."),
         ]
 
         for overrides, expected_message in invalid_cases:
@@ -301,6 +317,33 @@ class SubscriptionAppTest(unittest.TestCase):
                 html = response.data.decode()
                 self.assertEqual(response.status_code, 200)
                 self.assertIn(expected_message, html)
+
+    def test_notification_icon_appears_for_due_subscription(self):
+        self.register_user()
+        today = date.today().day
+
+        response = self.create_subscription(
+            nome="Assinatura com alerta",
+            vencimento=str(today),
+            notificar_dias_antes="0",
+        )
+        html = response.data.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Notificações", html)
+        self.assertIn("Assinatura com alerta", html)
+        self.assertIn("Vence hoje", html)
+        self.assertIn("notification-badge", html)
+
+    def test_notification_setting_is_rendered_on_form(self):
+        self.register_user()
+        response = self.create_subscription(nome="Alerta em cinco", notificar_dias_antes="5")
+        self.assertEqual(response.status_code, 200)
+
+        edit_html = self.client.get("/editar/1").data.decode()
+
+        self.assertIn('id="notificar_dias_antes"', edit_html)
+        self.assertIn('value="5"', edit_html)
 
     def test_missing_subscription_post_routes_return_404(self):
         self.register_user()
@@ -363,6 +406,83 @@ class SubscriptionAppTest(unittest.TestCase):
         self.assertIn("Olá, Maria", html)
         self.assertIn("Dashboard", html)
         self.assertIn("Análise das suas assinaturas", html)
+        self.assertIn("Minha Conta", html)
+
+    def test_profile_page_shows_account_data_and_menu(self):
+        self.register_user(email="kevin@example.com", nome="Kevin Souza")
+
+        html = self.client.get("/perfil").data.decode()
+
+        self.assertIn("Minha Conta", html)
+        self.assertIn("Kevin Souza", html)
+        self.assertIn("kevin@example.com", html)
+        self.assertIn("Alterar senha", html)
+        self.assertIn("KS", html)
+        self.assertIn('href="/perfil"', html)
+
+    def test_profile_password_change_validates_current_and_new_password(self):
+        self.register_user(email="senha@example.com", nome="Senha")
+
+        page = self.client.get("/perfil").data.decode()
+        response = self.client.post(
+            "/perfil",
+            data={
+                "csrf_token": self.csrf_from(page),
+                "senha_atual": "errada",
+                "nova_senha": "NovaSenha1!",
+                "confirmar_nova_senha": "NovaSenha1!",
+            },
+        )
+        self.assertIn("Senha atual incorreta.", response.data.decode())
+
+        page = self.client.get("/perfil").data.decode()
+        response = self.client.post(
+            "/perfil",
+            data={
+                "csrf_token": self.csrf_from(page),
+                "senha_atual": "Segredo1!",
+                "nova_senha": "fraca",
+                "confirmar_nova_senha": "fraca",
+            },
+        )
+        self.assertIn("A senha deve ter pelo menos 6 caracteres", response.data.decode())
+
+        page = self.client.get("/perfil").data.decode()
+        response = self.client.post(
+            "/perfil",
+            data={
+                "csrf_token": self.csrf_from(page),
+                "senha_atual": "Segredo1!",
+                "nova_senha": "NovaSenha1!",
+                "confirmar_nova_senha": "OutraSenha1!",
+            },
+        )
+        self.assertIn("As senhas não conferem.", response.data.decode())
+
+    def test_profile_password_change_updates_login_password(self):
+        self.register_user(email="troca@example.com", nome="Troca")
+
+        page = self.client.get("/perfil").data.decode()
+        response = self.client.post(
+            "/perfil",
+            data={
+                "csrf_token": self.csrf_from(page),
+                "senha_atual": "Segredo1!",
+                "nova_senha": "NovaSenha1!",
+                "confirmar_nova_senha": "NovaSenha1!",
+            },
+            follow_redirects=True,
+        )
+        self.assertIn("Senha alterada com sucesso.", response.data.decode())
+
+        self.logout_user()
+        response = self.login_user(email="troca@example.com", senha="Segredo1!")
+        self.assertIn("E-mail ou senha inválidos.", response.data.decode())
+
+        response = self.login_user(email="troca@example.com", senha="NovaSenha1!")
+        html = response.data.decode()
+        self.assertIn("Login realizado com sucesso.", html)
+        self.assertIn("Olá, Troca", html)
 
     def test_register_requires_strong_password(self):
         weak_passwords = [
@@ -482,6 +602,9 @@ class SubscriptionAppTest(unittest.TestCase):
     def test_security_headers_are_set(self):
         response = self.client.get("/login")
 
+        self.assertIn("default-src 'self'", response.headers["Content-Security-Policy"])
+        self.assertIn("form-action 'self'", response.headers["Content-Security-Policy"])
+        self.assertIn("object-src 'none'", response.headers["Content-Security-Policy"])
         self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
         self.assertEqual(response.headers["X-Frame-Options"], "DENY")
         self.assertEqual(response.headers["Referrer-Policy"], "strict-origin-when-cross-origin")
@@ -497,8 +620,21 @@ class SubscriptionAppTest(unittest.TestCase):
                 }
             )
 
+    def test_production_forces_secure_session_cookie(self):
+        app = create_app(
+            {
+                "TESTING": True,
+                "APP_ENV": "production",
+                "SECRET_KEY": "prod-secret-for-tests",
+                "SESSION_COOKIE_SECURE": False,
+                "DATABASE": str(Path(self.temp_dir.name) / "prod-secure.sqlite3"),
+            }
+        )
+
+        self.assertTrue(app.config["SESSION_COOKIE_SECURE"])
+
     def test_protected_pages_redirect_to_login_when_anonymous(self):
-        for path in ["/", "/dashboard", "/relatorios", "/nova", "/editar/1"]:
+        for path in ["/", "/dashboard", "/relatorios", "/nova", "/editar/1", "/perfil"]:
             with self.subTest(path=path):
                 response = self.client.get(path, follow_redirects=False)
                 self.assertEqual(response.status_code, 302)
@@ -513,10 +649,11 @@ class SubscriptionAppTest(unittest.TestCase):
 
         dashboard_html = self.client.get("/dashboard").data.decode()
         self.assertIn("Dashboard", dashboard_html)
-        self.assertIn('id="sidebar-collapse-toggle"', dashboard_html)
-        self.assertIn("subscription-sidebar", dashboard_html)
-        self.assertIn("Recolher menu lateral", dashboard_html)
-        self.assertIn("Sair", dashboard_html)
+        self.assertIn("Recorra", dashboard_html)
+        self.assertEqual(dashboard_html.count("Sair"), 1)
+        self.assertNotIn('id="sidebar-collapse-toggle"', dashboard_html)
+        self.assertNotIn("Recolher menu lateral", dashboard_html)
+        self.assertNotIn("brand-mark", dashboard_html)
         self.assertNotIn(">Painel<", dashboard_html)
 
     def test_users_only_see_their_own_subscriptions(self):

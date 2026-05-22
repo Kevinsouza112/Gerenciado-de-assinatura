@@ -14,16 +14,19 @@
 - Cadastro/login com sessão.
 - Isolamento de assinaturas por usuário.
 - Auditoria de segurança com correções de CSRF, debug, chave de produção, cabeçalhos e validação financeira.
+- CSP básica e cookie de sessão `Secure` forçado em produção.
 - `.env.example` para orientar configuração fora do desenvolvimento local.
+- Notificação interna por assinatura com configuração de dias antes do vencimento.
+- Página Minha Conta com dados do usuário e alteração de senha.
+- Menu de conta no topo com Minha Conta e Sair.
 - Testes automatizados básicos.
 
 ## Próximas Melhorias Recomendadas
 
 1. Melhorar cobertura de testes
-   - Testar validações individualmente.
-   - Testar duplicação de assinatura inativa.
    - Testar cálculos de relatório com banco vazio.
-   - Testar CSRF em todas as rotas POST.
+   - Testar responsividade visual do menu de conta em navegador real.
+   - Testar expiração de sessão.
 
 2. Separar CSS
    - Mover estilos de `base.html` para um arquivo estático.
@@ -54,9 +57,6 @@
 
 ## Ideias Futuras
 
-- Login local.
-- Multiusuário.
 - Histórico de pagamentos.
-- Notificações de vencimento.
 - Importação/exportação de backup.
 - PWA para uso como app simples.

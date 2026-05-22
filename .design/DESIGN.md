@@ -32,7 +32,9 @@ Interface de painel administrativo clara, compacta e polida, inspirada na refere
 | Small labels | system UI | 700 | 0.72rem | 1.2 |
 
 ## 4. Component Styles
-Cards usam fundo branco, borda `#e3e8f2`, raio de 18px e sombra suave. Botões principais são pills azuis, botões secundários são outline pills. Sidebar tem links com ícone, item ativo em azul com texto branco. Tabelas ficam dentro de painéis brancos com cabeçalho discreto e linhas espaçadas.
+Cards usam fundo branco, borda `#e3e8f2`, raio de 18px e sombra suave. Botões principais são pills azuis, botões secundários são outline pills. Sidebar tem marca textual compacta, links com ícone, item ativo em azul com texto branco e sem logout duplicado quando o menu de conta estiver disponível. Tabelas ficam dentro de painéis brancos com cabeçalho discreto e linhas espaçadas.
+
+O topo usa ações compactas em formato circular/pill: notificações, alternância de tema e menu de conta. O menu de conta deve exibir iniciais em avatar circular, nome/e-mail no cabeçalho do dropdown e ações diretas como Minha Conta e Sair. Dropdowns, botões de ação, outline buttons, links e botões de fechar alertas devem usar a mesma superfície, borda e contraste do tema ativo.
 
 ## 5. Layout Principles
 Desktop usa sidebar de 264px fixa e conteúdo com padding de 32px. Mobile empilha sidebar no topo como navegação horizontal rolável. Conteúdo mantém largura fluida e componentes com responsividade Bootstrap.

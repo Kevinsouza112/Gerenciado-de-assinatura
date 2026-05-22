@@ -2,10 +2,11 @@ from functools import wraps
 
 from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
 
+from app.repositories.subscription_repository import SubscriptionRepository
 from app.repositories.user_repository import UserRepository
 from app.security import csrf_token, validate_csrf
 from app.services.auth_service import AuthService
-from app.services.subscription_service import ValidationError
+from app.services.subscription_service import SubscriptionService, ValidationError
 
 
 auth_bp = Blueprint("auth", __name__)
@@ -41,7 +42,24 @@ def load_logged_in_user() -> None:
 
 @auth_bp.app_context_processor
 def inject_auth_globals():
-    return {"current_user": g.get("current_user"), "csrf_token": csrf_token}
+    current_user = g.get("current_user")
+    notifications = []
+    if current_user:
+        notifications = SubscriptionService(SubscriptionRepository()).notifications(current_user.id)
+    return {
+        "current_user": current_user,
+        "account_initials": _user_initials(current_user) if current_user else "",
+        "csrf_token": csrf_token,
+        "notifications": notifications,
+        "notifications_count": len(notifications),
+    }
+
+
+def _user_initials(user) -> str:
+    parts = [part[0] for part in user.nome.strip().split() if part]
+    if not parts:
+        return user.email[:2].upper()
+    return "".join(parts[:2]).upper()
 
 
 @auth_bp.route("/cadastro", methods=["GET", "POST"])
@@ -80,6 +98,29 @@ def login():
             errors = error.errors
 
     return render_template("auth/login.html", errors=errors, form_data=form_data, title="Login")
+
+
+@auth_bp.route("/perfil", methods=["GET", "POST"])
+@login_required
+def profile():
+    errors = {}
+
+    if request.method == "POST":
+        validate_csrf()
+        try:
+            _auth_service().change_password(g.current_user, request.form)
+            flash("Senha alterada com sucesso.", "success")
+            return redirect(url_for("auth.profile"))
+        except ValidationError as error:
+            errors = error.errors
+
+    return render_template(
+        "auth/profile.html",
+        errors=errors,
+        user=g.current_user,
+        initials=_user_initials(g.current_user),
+        title="Minha Conta",
+    )
 
 
 @auth_bp.route("/logout", methods=["POST"])

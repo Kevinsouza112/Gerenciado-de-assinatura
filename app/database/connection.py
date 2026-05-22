@@ -49,13 +49,20 @@ def init_db() -> None:
             vencimento INTEGER NOT NULL CHECK (vencimento BETWEEN 1 AND 31),
             categoria TEXT NOT NULL CHECK (categoria IN ('streaming', 'saúde', 'educação', 'outros')),
             divisao INTEGER NOT NULL DEFAULT 1 CHECK (divisao >= 1),
-            ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1))
+            ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+            notificar_dias_antes INTEGER NOT NULL DEFAULT 7 CHECK (notificar_dias_antes BETWEEN 0 AND 31)
         )
         """
     )
     if not _assinatura_column_exists("user_id"):
         db.execute("ALTER TABLE assinatura ADD COLUMN user_id INTEGER")
+    if not _assinatura_column_exists("notificar_dias_antes"):
+        db.execute(
+            "ALTER TABLE assinatura ADD COLUMN notificar_dias_antes INTEGER NOT NULL DEFAULT 7 "
+            "CHECK (notificar_dias_antes BETWEEN 0 AND 31)"
+        )
 
     db.execute("CREATE INDEX IF NOT EXISTS idx_assinatura_user_ativo ON assinatura (user_id, ativo)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_assinatura_user_vencimento ON assinatura (user_id, ativo, vencimento)")
     db.execute("CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario (email)")
     db.commit()
