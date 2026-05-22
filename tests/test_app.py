@@ -1,7 +1,7 @@
 import re
 import tempfile
 import unittest
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from app import create_app
@@ -335,6 +335,27 @@ class SubscriptionAppTest(unittest.TestCase):
         self.assertIn("Vence hoje", html)
         self.assertIn("notification-badge", html)
 
+    def test_subscription_list_alert_respects_notification_setting(self):
+        self.register_user()
+        tomorrow = date.today() + timedelta(days=1)
+
+        response = self.create_subscription(
+            nome="Sem alerta visual",
+            vencimento=str(tomorrow.day),
+            notificar_dias_antes="0",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        response = self.create_subscription(
+            nome="Com alerta visual",
+            vencimento=str(tomorrow.day),
+            notificar_dias_antes="1",
+        )
+        html = response.data.decode()
+
+        self.assertRegex(html, r'<tr class=""[^>]*>\s*<td>\s*<div class="subscription-name-cell">\s*<div>\s*<div class="fw-bold">Sem alerta visual</div>')
+        self.assertRegex(html, r'<tr class="table-warning"[^>]*>\s*<td>\s*<div class="subscription-name-cell">\s*<div>\s*<div class="fw-bold">Com alerta visual</div>')
+
     def test_notification_setting_is_rendered_on_form(self):
         self.register_user()
         response = self.create_subscription(nome="Alerta em cinco", notificar_dias_antes="5")
@@ -552,11 +573,13 @@ class SubscriptionAppTest(unittest.TestCase):
 
     def test_register_template_has_email_suggestion_and_password_confirmation_feedback(self):
         html = self.client.get("/cadastro").data.decode()
+        register_js = Path("app/static/js/register.js").read_text(encoding="utf-8")
 
         self.assertIn("email-domain-suggestion", html)
-        self.assertIn("gmail.com", html)
         self.assertIn("password-match-feedback", html)
-        self.assertIn("As senhas conferem.", html)
+        self.assertIn('/static/js/register.js', html)
+        self.assertIn("gmail.com", register_js)
+        self.assertIn("As senhas conferem.", register_js)
 
     def test_register_rejects_duplicate_and_oversized_credentials(self):
         self.register_user(email="duplicado@example.com", nome="Primeiro")
@@ -603,6 +626,8 @@ class SubscriptionAppTest(unittest.TestCase):
         response = self.client.get("/login")
 
         self.assertIn("default-src 'self'", response.headers["Content-Security-Policy"])
+        script_src = response.headers["Content-Security-Policy"].split("style-src", 1)[0]
+        self.assertNotIn("'unsafe-inline'", script_src)
         self.assertIn("form-action 'self'", response.headers["Content-Security-Policy"])
         self.assertIn("object-src 'none'", response.headers["Content-Security-Policy"])
         self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")

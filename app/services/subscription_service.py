@@ -144,7 +144,7 @@ class SubscriptionService:
         return {
             "subscriptions": subscriptions,
             "inactive_subscriptions": inactive_subscriptions,
-            "due_map": {item.id: is_due_soon(item.vencimento) for item in subscriptions},
+            "due_map": {item.id: should_notify(item) for item in subscriptions},
             "summary": {
                 "total_bruto_mensal": total_bruto_mensal,
                 "total_real_mensal": total_real_mensal,

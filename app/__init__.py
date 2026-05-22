@@ -1,6 +1,7 @@
 from datetime import timedelta
+from secrets import token_urlsafe
 
-from flask import Flask
+from flask import Flask, g
 
 from app.database.connection import close_db, init_db
 from app.routes.auth_routes import auth_bp
@@ -28,11 +29,16 @@ def create_app(test_config: dict | None = None) -> Flask:
     if app.config["APP_ENV"] == "production":
         app.config["SESSION_COOKIE_SECURE"] = True
 
+    @app.before_request
+    def set_csp_nonce() -> None:
+        g.csp_nonce = token_urlsafe(16)
+
     @app.after_request
     def add_security_headers(response):
+        nonce = getattr(g, "csp_nonce", "")
         csp = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            f"script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
             "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; "
             "img-src 'self' data:; "

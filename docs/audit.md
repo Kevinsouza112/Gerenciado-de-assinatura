@@ -19,6 +19,44 @@
 
 ## Achados Corrigidos
 
+### `requirements.txt` incompleto
+
+Impacto: uma instalação nova podia depender de pacotes transitivos implícitos ou versões diferentes das usadas no ambiente local.
+
+Correção: `requirements.txt` foi atualizado com as dependências reais do projeto Flask fixadas com `==`, incluindo Flask, Werkzeug e dependências transitivas instaladas para a aplicação.
+
+### `assinatura.user_id` sem restrição em bancos novos
+
+Impacto: bancos recém-criados aceitavam assinaturas sem dono, contrariando o isolamento por usuário.
+
+Correção: `init_db` agora cria `assinatura.user_id` como `INTEGER NOT NULL REFERENCES usuario(id)` em bancos novos. Para bancos existentes, o `ALTER TABLE` continua como fallback compatível e a inicialização registra warning se encontrar registros com `user_id IS NULL`.
+
+### Alerta visual ignorava `notificar_dias_antes`
+
+Impacto: a listagem marcava vencimentos próximos com janela fixa de 7 dias, mesmo quando a assinatura tinha outro prazo configurado.
+
+Correção: `SubscriptionService.dashboard()` passou a preencher `due_map` com `should_notify(item)`, respeitando `notificar_dias_antes`.
+
+Evidência: teste `test_subscription_list_alert_respects_notification_setting`.
+
+### Banco e logs não devem estar no repositório
+
+Impacto: banco local e logs podem conter dados pessoais ou ruído operacional.
+
+Correção: `.gitignore` foi conferido e já continha `instance/` e `*.log`; foi adicionada a entrada `*.sqlite3`. `git ls-files` confirmou que `instance/assinaturas.sqlite3` e arquivos `*.log` não estavam rastreados, então não foi necessário remover arquivos com `git rm --cached`.
+
+### Line endings mistos
+
+Impacto: finais de linha mistos podem gerar diffs ruidosos e comportamento inconsistente entre Windows e Linux.
+
+Correção: arquivos `.py` e `.html` foram normalizados para LF e `.gitattributes` foi adicionado com regras para manter `.py` e `.html` em LF.
+
+### CSP e scripts inline
+
+Impacto: `script-src 'unsafe-inline'` permite execução de scripts inline, aumentando a superfície de XSS caso alguma injeção passe pelo escape.
+
+Correção: o script de tema foi movido para `app/static/js/theme.js`, os filtros da listagem para `app/static/js/filters.js`, a sugestão de e-mail/confirmação de senha para `app/static/js/register.js`, e o `onsubmit` inline de confirmação virou listener em arquivo estático. A CSP removeu `'unsafe-inline'` de `script-src` e passou a emitir nonce por requisição para os scripts carregados pelos templates.
+
 ### CSRF aceitava POST sem token em sessão nova
 
 Impacto: rotas POST como `/login`, `/cadastro` e `/logout` podiam aceitar requisição sem `csrf_token` quando a sessão ainda não tinha token.
@@ -87,7 +125,7 @@ python -m compileall app tests
 Resultado conhecido:
 
 ```text
-Ran 26 tests
+Ran 27 tests
 OK
 ```
 

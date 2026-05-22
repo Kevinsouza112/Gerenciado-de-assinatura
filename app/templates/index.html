@@ -127,7 +127,7 @@
                             Duplicar
                           </button>
                         </form>
-                        <form method="post" action="{{ url_for('subscriptions.delete_subscription', subscription_id=item.id) }}" onsubmit="return confirm('Marcar esta assinatura como inativa?');">
+                        <form method="post" action="{{ url_for('subscriptions.delete_subscription', subscription_id=item.id) }}" data-confirm-message="Marcar esta assinatura como inativa?">
                           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                           <button class="dropdown-item text-danger" type="submit">
                             <i class="bi bi-slash-circle" aria-hidden="true"></i>
@@ -247,56 +247,5 @@
     </div>
   </div>
 
-  <script>
-    (() => {
-      const categoryFilter = document.getElementById("filter-categoria");
-      const frequencyFilters = Array.from(document.querySelectorAll("input[name='frequencia']"));
-      const clearButton = document.getElementById("clear-filters");
-      const clearEmptyButton = document.getElementById("clear-filters-empty");
-      const emptyFilterState = document.getElementById("filter-empty-state");
-      const rows = Array.from(document.querySelectorAll("[data-subscription-row]"));
-
-      const selectedFrequency = () => {
-        const selected = frequencyFilters.find((input) => input.checked);
-        return selected ? selected.value : "";
-      };
-
-      const applyFilters = () => {
-        const selectedCategory = categoryFilter.value;
-        const selectedFrequencyValue = selectedFrequency();
-        let visibleCount = 0;
-
-        rows.forEach((row) => {
-          const matchesCategory = !selectedCategory || row.dataset.categoria === selectedCategory;
-          const matchesFrequency = !selectedFrequencyValue || row.dataset.frequencia === selectedFrequencyValue;
-          const isVisible = matchesCategory && matchesFrequency;
-
-          row.classList.toggle("d-none", !isVisible);
-          if (isVisible) {
-            visibleCount += 1;
-          }
-        });
-
-        if (emptyFilterState) {
-          emptyFilterState.classList.toggle("d-none", visibleCount > 0);
-        }
-      };
-
-      const clearFilters = () => {
-        categoryFilter.value = "";
-        const allFrequency = frequencyFilters.find((input) => input.value === "");
-        if (allFrequency) {
-          allFrequency.checked = true;
-        }
-        applyFilters();
-      };
-
-      categoryFilter.addEventListener("change", applyFilters);
-      frequencyFilters.forEach((input) => input.addEventListener("change", applyFilters));
-      clearButton.addEventListener("click", clearFilters);
-      if (clearEmptyButton) {
-        clearEmptyButton.addEventListener("click", clearFilters);
-      }
-    })();
-  </script>
+  <script nonce="{{ g.csp_nonce }}" src="{{ url_for('static', filename='js/filters.js') }}"></script>
 {% endblock %}
